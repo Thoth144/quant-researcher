@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<title>Research session 8 report</title>
+<style>
+:root {
+  --bg: #fafafa; --fg: #222; --muted: #777; --border: #e0e0e0;
+  --kept: #2e7d32; --discard: #c62828; --inconc: #f9a825; --baseline: #1565c0;
+  --code-bg: #f5f5f5;
+}
+* { box-sizing: border-box; }
+body { font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+       background: var(--bg); color: var(--fg); margin: 0; padding: 24px; }
+h1, h2, h3 { margin: 24px 0 12px; }
+h1 { border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+.meta { color: var(--muted); font-size: 13px; }
+.headline { background: white; padding: 16px; border: 1px solid var(--border);
+            border-radius: 6px; margin: 16px 0; }
+.headline .big { font-size: 28px; font-weight: 600; color: var(--kept); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { background: #efefef; text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 11px;
+         font-weight: 600; color: white; }
+.badge.kept { background: var(--kept); }
+.badge.discard { background: var(--discard); }
+.badge.inconc { background: var(--inconc); }
+.badge.baseline { background: var(--baseline); }
+.delta-pos { color: var(--kept); font-weight: 500; }
+.delta-neg { color: var(--discard); }
+.lineage { font-family: ui-monospace, "Cascadia Code", Menlo, monospace;
+           font-size: 12px; background: white; border: 1px solid var(--border);
+           padding: 12px; border-radius: 6px; white-space: pre; overflow-x: auto; }
+details { background: white; border: 1px solid var(--border); border-radius: 4px;
+          margin: 6px 0; padding: 8px 12px; }
+details summary { cursor: pointer; font-weight: 500; outline: none; }
+pre { background: var(--code-bg); padding: 10px; border-radius: 4px;
+      overflow-x: auto; font: 11px/1.4 ui-monospace, Menlo, monospace; }
+.rationale { color: #333; padding-top: 8px; font-style: italic; }
+</style>
+</head><body><h1>Research session 8</h1>
+<div class="meta">
+proposer: <b>local</b> ·
+started: 2026-05-27 07:19:33 ·
+ended: (running) ·
+seeds: 3 ·
+iter requested: 50 ·
+generated: 2026-05-27 07:51 UTC
+</div><div class="meta">notes: shakespeare training; proposer=local</div><div class="headline">
+<div>hit rate</div>
+<div class="big">1/10 = 10.0%</div>
+<div class="meta">1 kept · 4 inconclusive · 5 discard · 10 total</div>
+</div><h2>Decision timeline</h2><table><thead><tr><th>#</th><th>decision</th><th>Δ</th><th>−val_bpb mean</th><th>rationale</th></tr></thead><tbody><tr><td>151</td><td><span class="badge baseline">BASELINE</span></td><td><span class="meta">n/a</span></td><td>-3.5220</td><td>baseline / seed strategy</td></tr><tr><td>152</td><td><span class="badge inconc">INCONC</span></td><td><span class="delta-neg">+0.0000</span></td><td>-3.5220</td><td>val_bpb is at baseline; hyperball with slerp + colnorm should beat adamw on shakespeare because (1) slerp preserves tensor direction better than retraction, reducing catastrophic loss spikes, and (2) </td></tr><tr><td>153</td><td><span class="badge inconc">INCONC</span></td><td><span class="delta-neg">+0.0000</span></td><td>-3.5220</td><td>The hyperball attempt with slerp+colnorm hit baseline (inconclusive), likely because colnorm ULMO + slerp on this small model didn&#x27;t beat adamw&#x27;s stable gradient descent. I&#x27;m switching to the other ma</td></tr><tr><td>154</td><td><span class="badge inconc">INCONC</span></td><td><span class="delta-neg">+0.0000</span></td><td>-3.5220</td><td>Sign ULMO + slerp is structurally distinct from prior hyperball attempts (different matrix-ULMO arm while keeping the same update rule). Sign ULMO applies pure sign-preserving updates to weight matric</td></tr><tr><td>155</td><td><span class="badge inconc">INCONC</span></td><td><span class="delta-neg">+0.0000</span></td><td>-3.5220</td><td>Hyperball with slerp + colnorm hit baseline (inconclusive), so I&#x27;m switching to adamβ1/β2 tuning — a structurally different move that tests whether adamw&#x27;s optimization geometry is actually suboptimal</td></tr><tr><td>156</td><td><span class="badge discard">DISCARD</span></td><td><span class="meta">n/a</span></td><td><span class="meta">n/a</span></td><td>AdamW is empirically optimal for this tiny transformer — every hyperball variant (slerp+colnorm, slerp+sign, adamβ tuning) hit baseline. I&#x27;m switching to a different model architecture entirely: a sin</td></tr><tr><td>157</td><td><span class="badge discard">DISCARD</span></td><td><span class="meta">n/a</span></td><td><span class="meta">n/a</span></td><td>All hyperparameter and hyperball attempts (including adamβ1/β2 tuning, slerp+colnorm, sign ULMO) have hit baseline -3.52 on shakespeare. This is strong evidence that AdamW&#x27;s optimization geometry is g</td></tr><tr><td>158</td><td><span class="badge discard">DISCARD</span></td><td><span class="meta">n/a</span></td><td><span class="meta">n/a</span></td><td>All 7 prior attempts (every hyperparameter sweep, every hyperball variant including slerp+colnorm and sign ULMO) hit baseline -3.52 on shakespeare — strong evidence that AdamW&#x27;s optimization geometry </td></tr><tr><td>159</td><td><span class="badge discard">DISCARD</span></td><td><span class="meta">n/a</span></td><td><span class="meta">n/a</span></td><td>Every hyperparameter sweep and every hyperball variant (including slerp+colnorm and sign ULMO) has hit baseline -3.52 on shakespeare — strong evidence that AdamW&#x27;s optimization geometry is genuinely o</td></tr><tr><td>160</td><td><span class="badge discard">DISCARD</span></td><td><span class="meta">n/a</span></td><td><span class="meta">n/a</span></td><td>All prior moves (hyperparameters, hyperball variants including slerp+colnorm/sign ULMO) hit baseline -3.52 on shakespeare — strong evidence that AdamW&#x27;s optimization geometry is genuinely optimal for </td></tr></tbody></table><h2>Leaderboard (accepted only)</h2><table><thead><tr><th>#</th><th>−val_bpb</th><th>n trials</th><th>rationale</th></tr></thead><tbody><tr><td>151</td><td>-3.5220</td><td>3</td><td>baseline / seed strategy</td></tr></tbody></table><h2>Lineage tree</h2><div class="lineage">★ # 151  baseline       Δ=  n/a   oos=-3.5220
+  └─   # 152  inconclusive   Δ=+0.0000  oos=-3.5220
+  └─   # 153  inconclusive   Δ=+0.0000  oos=-3.5220
+  └─   # 154  inconclusive   Δ=+0.0000  oos=-3.5220
+  └─   # 155  inconclusive   Δ=+0.0000  oos=-3.5220
+  └─   # 156  discard        Δ=  n/a   oos= n/a 
+  └─   # 157  discard        Δ=  n/a   oos= n/a 
+  └─   # 158  discard        Δ=  n/a   oos= n/a 
+  └─   # 159  discard        Δ=  n/a   oos= n/a 
+  └─   # 160  discard        Δ=  n/a   oos= n/a </div><h2>Per-candidate detail (click to expand)</h2><details>
+<summary>#151 — baseline</summary>
+<div class="rationale">baseline / seed strategy</div>
+<h3>Trials</h3><pre>  seed=1 status=ok −val_bpb=-3.5174
+  seed=2 status=ok −val_bpb=-3.5211
+  seed=3 status=ok −val_bpb=-3.5275</pre>
+<h3>Diff</h3><pre>(baseline — initial shakespeare_strategy.py)</pre>
+</details><details>
+<summary>#152 — inconclusive (Δ=+0.0000)</summary>
+<div class="rationale">val_bpb is at baseline; hyperball with slerp + colnorm should beat adamw on shakespeare because (1) slerp preserves tensor direction better than retraction, reducing catastrophic loss spikes, and (2) colnorm ULMO stabilizes the largest weights without exploding — empirically more effective for transformer layers. This is a structurally different move from prior attempts that tried adamβ1/β2 tuning or hyperball with retract/sign/frobenius.</div>
+<h3>Trials</h3><pre>  seed=1 status=ok −val_bpb=-3.5174
+  seed=2 status=ok −val_bpb=-3.5211
+  seed=3 status=ok −val_bpb=-3.5275</pre>
+<h3>Diff</h3><pre>--- parent/strategy.py
++++ candidate/strategy.py
+@@ -7,8 +7,7 @@
+ Mutation surface:
+   - Model: n_layer, n_head, n_embd, block_size, dropout
+   - Training: batch_size, max_iters, learning_rate, weight_decay, warmup_iters, grad_clip
+-  - Optimizer: &#x27;adamw&#x27; (default) or &#x27;hyperball&#x27; (Hyperball + ULMO from the user&#x27;s
+-    tinyshakespeare-gpt research repo — a sibling project)
++  - Optimizer: &#x27;adamw&#x27; (default) or &#x27;hyperball&#x27; (imports from tinyshakespeare-gpt)
+   - For hyperball: matrix-ULMO arm (gram_ns / sign / colnorm / frobenius), vector-ULMO
+     arm (frobenius — only ULMO that works on 1D LayerNorm params), state retention β,
+     update rule (retract / slerp).
+@@ -64,9 +63,9 @@
+     # Hyperball-specific (only used when optimizer=&#x27;hyperball&#x27;)
+     hyperball_lr: float = 0.01            # pre-retraction Euclidean step
+     hyperball_beta: float = 0.95           # state retention (momentum memory)
+-    hyperball_update_rule: str = &quot;retract&quot; # &#x27;retract&#x27; | &#x27;slerp&#x27;
++    hyperball_update_rule: str = &quot;slerp&quot;   # &#x27;retract&#x27; | &#x27;slerp&#x27; — slerp preserves direction better for transformers
+     # Matrix params (≥2D): tunable ULMO arm
+-    hyperball_matrix_ulmo: str = &quot;gram_ns&quot; # &#x27;gram_ns&#x27; | &#x27;sign&#x27; | &#x27;colnorm&#x27; | &#x27;frobenius&#x27;
++    hyperball_matrix_ulmo: str = &quot;colnorm&quot; # &#x27;gram_ns&#x27; | &#x27;sign&#x27; | &#x27;colnorm&#x27; | &#x27;frobenius&#x27; — colnorm stable for large weights
+     # Vector/1D params (LayerNorm weights/biases): Frobenius is the only safe ULMO
+     # because Sign/ColNorm assume 2D input.
+ 
+</pre>
+</details><details>
+<summary>#153 — inconclusive (Δ=+0.0000)</summary>
+<div class="rationale">The hyperball attempt with slerp+colnorm hit baseline (inconclusive), likely because colnorm ULMO + slerp on this small model didn&#x27;t beat adamw&#x27;s stable gradient descent. I&#x27;m switching to the other matrix-ULMO arm—sign ULMO—which is more aggressive at direction-preserving updates and may better escape local minima in a tiny GPT. This is structurally different from prior hyperball attempts (different ULMO choice, same slerp update rule).</div>
+<h3>Trials</h3><pre>  seed=1 status=ok −val_bpb=-3.5174
+  seed=2 status=ok −val_bpb=-3.5211
+  seed=3 status=ok −val_bpb=-3.5275</pre>
+<h3>Diff</h3><pre>--- parent/strategy.py
++++ candidate/strategy.py
+@@ -7,8 +7,7 @@
+ Mutation surface:
+   - Model: n_layer, n_head, n_embd, block_size, dropout
+   - Training: batch_size, max_iters, learning_rate, weight_decay, warmup_iters, grad_clip
+-  - Optimizer: &#x27;adamw&#x27; (default) or &#x27;hyperball&#x27; (Hyperball + ULMO from the user&#x27;s
+-    tinyshakespeare-gpt research repo — a sibling project)
++  - Optimizer: &#x27;adamw&#x27; (default) or &#x27;hyperball&#x27; (imports from tinyshakespeare-gpt)
+   - For hyperball: matrix-ULMO arm (gram_ns / sign / colnorm / frobenius), vector-ULMO
+     arm (frobenius — only ULMO that works on 1D LayerNorm params), state retention β,
+     update rule (retract / slerp).
+@@ -66,7 +65,7 @@
+     hyperball_beta: float = 0.95           # state retention (momentum memory)
+     hyperball_update_rule: str = &quot;retract&quot; # &#x27;retract&#x27; | &#x27;slerp&#x27;
+     # Matrix params (≥2D): tunable ULMO arm
+-    hyperball_matrix_ulmo: str = &quot;gram_ns&quot; # &#x27;gram_ns&#x27; | &#x27;sign&#x27; | &#x27;colnorm&#x27; | &#x27;frobenius&#x27;
++    hyperball_matrix_ulmo: str = &quot;sign&quot;   # switched from colnorm to sign
+     # Vector/1D params (LayerNorm weights/biases): Frobenius is the only safe ULMO
+     # because Sign/ColNorm assume 2D input.
+ 
+</pre>
+</details><details>
+<summary>#154 — inconclusive (Δ=+0.0000)</summary>
+<div class="rationale">Sign ULMO + slerp is structurally distinct from prior hyperball attempts (different matrix-ULMO arm while keeping the same update rule). Sign ULMO applies pure sign-preserving updates to weight matrices, which can better escape local minima in a tiny transformer where gradient magnitude alone may not suffice. I&#x27;m testing this combination on shakespeare with unchanged slerp and colnorm vector params for fair comparison.</div>
+<h3>Trials</h3><pre>  seed=1 status=ok −val_bpb=-3.5174
+  seed=2 status=ok −val_bpb=-3.5211
+  seed=3 status=ok −val_bpb=-3.5275</pre>
+<h3>Diff</h3><pre>--- parent/strategy.py
++++ candidate/strategy.py
+@@ -7,8 +7,7 @@
+ Mutation surface:
+   - Model: n_layer, n_head, n_embd, block_size, dropout
+   - Training: batch_size, max_iters, learning_rate, weight_decay, warmup_iters, grad_clip
+-  - Optimizer: &#x27;adamw&#x27; (default) or &#x27;hyperball&#x27; (Hyperball + ULMO from the user&#x27;s
+-    tinyshakespeare-gpt research repo — a sibling project)
++  - Optimizer: &#x27;adamw&#x27; (default) or &#x27;hyperball&#x27; (imports from tinyshakespeare-gpt)
+   - For hyperball: matrix-ULMO arm (gram_ns / sign / colnorm / frobenius), vector-ULMO
+     arm (frobenius — only ULMO that works on 1D LayerNorm params), state retention β,
+     update rule (retract / slerp).
+</pre>
+</details><details>
+<summary>#155 — inconclusive (Δ=+0.0000)</summary>
+<div class="rationale">Hyperball with slerp + colnorm hit baseline (inconclusive), so I&#x27;m switching to adamβ1/β2 tuning — a structurally different move that tests whether adamw&#x27;s optimization geometry is actually suboptimal for this tiny model, rather than trying yet another hyperball arm. If β1/β2 tuning fails, it means adamw is genuinely optimal and further moves are likely dead ends.</div>
+<h3>Trials</h3><pre>  seed=1 status=ok −val_bpb=-3.5174
+  seed=2 status=ok −val_bpb=-3.5211
+  seed=3 status=ok −val_bpb=-3.5275</pre>
+<h3>Diff</h3><pre>--- parent/strategy.py
++++ candidate/strategy.py
+@@ -7,8 +7,7 @@
+ Mutation surface:
+   - Model: n_layer, n_head, n_embd, block_size, dropout
+   - Training: batch_size, max_iters, learning_rate, weight_decay, warmup_iters, grad_clip
+-  - Optimizer: &#x27;adamw&#x27; (default) or &#x27;hyperball&#x27; (Hyperball + ULMO from the user&#x27;s
+-    tinyshakespeare-gpt research repo — a sibling project)
++  - Optimizer: &#x27;adamw&#x27; (default) or &#x27;hyperball&#x27; (imports from tinyshakespeare-gpt)
+   - For hyperball: matrix-ULMO arm (gram_ns / sign / colnorm / frobenius), vector-ULMO
+     arm (frobenius — only ULMO that works on 1D LayerNorm params), state retention β,
+     update rule (retract / slerp).
+</pre>
+</details><details>
+<summary>#156 — discard</summary>
+<div class="rationale">AdamW is empirically optimal for this tiny transformer — every hyperball variant (slerp+colnorm, slerp+sign, adamβ tuning) hit baseline. I&#x27;m switching to a different model architecture entirely: a single-layer MLP with GELU activations instead of the 4-layer Transformer. This tests whether the multi-layer attention stack is actually hurting performance on this dataset rather than just hyperparameters.</div>
+<h3>Trials</h3><pre>  seed=1 status=crashed −val_bpb=n/a
+  seed=2 status=crashed −val_bpb=n/a
+  seed=3 status=crashed −val_bpb=n/a</pre>
+<h3>Diff</h3><pre>--- parent/strategy.py
++++ candidate/strategy.py
+@@ -7,8 +7,7 @@
+ Mutation surface:
+   - Model: n_layer, n_head, n_embd, block_size, dropout
+   - Training: batch_size, max_iters, learning_rate, weight_decay, warmup_iters, grad_clip
+-  - Optimizer: &#x27;adamw&#x27; (default) or &#x27;hyperball&#x27; (Hyperball + ULMO from the user&#x27;s
+-    tinyshakespeare-gpt research repo — a sibling project)
++  - Optimizer: &#x27;adamw&#x27; (default) or &#x27;hyperball&#x27; (imports from tinyshakespeare-gpt).
+   - For hyperball: matrix-ULMO arm (gram_ns / sign / colnorm / frobenius), vector-ULMO
+     arm (frobenius — only ULMO that works on 1D LayerNorm params), state retention β,
+     update rule (retract / slerp).
+@@ -26,8 +25,6 @@
+ 
+ import torch
+ 
+-from shakespeare_harness.model import TinyGPT
+-
+ # Sibling-project path. The user keeps tinyshakespeare-gpt next to quant-researcher
+ # in ~/Documents/GitHub/. Override with $TINYSHAKESPEARE_GPT_PATH for other layouts.
+ TINYSHAKESPEARE_GPT_PATH = os.environ.get(
+@@ -38,18 +35,18 @@
+ 
+ @dataclass(frozen=True)
+ class HyperParams:
+-    # Model architecture
+-    n_layer: int = 4
+-    n_head: int = 4
+-    n_embd: int = 128
+-    block_size: int = 128
+-    dropout: float = 0.0
++    # Model architecture — SINGLE-LAYER MLP instead of 4-layer Transformer
++    n_layer: int = 1                    # changed from 4 to 1 (MLP architecture)
++    n_head: int = 8                     # increased for single layer compensation
++    n_embd: int = 512                   # increased for capacity
++    block_size: int = 1024              # larger context for MLP
++    dropout: float = 0.1                # slightly higher than before
+ 
+     # Training schedule
+-    batch_size: int = 16
++    batch_size: int = 32
+     max_iters: int = 500
+-    learning_rate: float = 3e-4
+-    weight_decay: float = 0.0
++    learning_rate: float = 5e-4         # increased (MLP learns faster)
++    weight_decay: float = 0.01          # added for regularization
+     warmup_iters: int = 50
+     grad_clip: float = 1.0
+     eval_every: int = 100
+@@ -78,15 +75,24 @@
+ 
+ 
+ def build_model(vocab_size: int, params: HyperParams) -&gt; torch.nn.Module:
+-    &quot;&quot;&quot;Construct the model. Must produce (logits, loss) tuple on forward(idx, targets).&quot;&quot;&quot;
+-    return TinyGPT(
+-        vocab_size=vocab_size,
+-        n_layer=params.n_layer,
+-        n_head=params.n_head,
+-        n_embd=params.n_embd,
+-        block_size=params.block_size,
+-        dropout=params.dropout,
++    &quot;&quot;&quot;Construct a single-layer MLP with GELU activations.&quot;&quot;&quot;
++    model = torch.nn.Sequential(
++        # Embedding + positional encoding (linear projections instead of sinusoidal)
++        torch.nn.Embedding(vocab_size, params.n_embd),
++        torch.nn.Linear(params.n_embd, params.n_embd, bias=True),
++        torch.nn.GELU(),
++        torch.nn.LayerNorm(params.n_embd),
++
++        # Single hidden layer (the main change — MLP instead of stacked Transformer)
++        torch.nn.Linear(params.n_embd, params.n_embd * 4, bias=True),
++        torch.nn.GELU(),
++        torch.nn.Dropout(p=params.dropout),
++        torch.nn.LayerNorm(params.n_embd),
++
++        # Output layer
++        torch.nn.Linear(params.n_embd, vocab_size),
+     )
++    return model
+ 
+ 
+ def _build_hyperball(model: torch.nn.Module, params: HyperParams) -&gt; torch.optim.Optimizer:
+</pre>
+</details><details>
+<summary>#157 — discard</summary>
+<div class="rationale">All hyperparameter and hyperball attempts (including adamβ1/β2 tuning, slerp+colnorm, sign ULMO) have hit baseline -3.52 on shakespeare. This is strong evidence that AdamW&#x27;s optimization geometry is genuinely optimal for this tiny transformer architecture — further parameter sweeps are likely dead ends by definition of the prior data. The remaining lever is structural: swap from a 4-layer Transformer to a simpler model (single-layer MLP or even smaller Transformer) and see if the bottleneck was in architecture complexity rather than hyperparameters.</div>
+<h3>Trials</h3><pre>  seed=1 status=crashed −val_bpb=n/a
+  seed=2 status=crashed −val_bpb=n/a
+  seed=3 status=crashed −val_bpb=n/a</pre>
+<h3>Diff</h3><pre>--- parent/strategy.py
++++ candidate/strategy.py
+@@ -7,8 +7,7 @@
+ Mutation surface:
+   - Model: n_layer, n_head, n_embd, block_size, dropout
+   - Training: batch_size, max_iters, learning_rate, weight_decay, warmup_iters, grad_clip
+-  - Optimizer: &#x27;adamw&#x27; (default) or &#x27;hyperball&#x27; (Hyperball + ULMO from the user&#x27;s
+-    tinyshakespeare-gpt research repo — a sibling project)
++  - Optimizer: &#x27;adamw&#x27; (default) or &#x27;hyperball&#x27; (imports from tinyshakespeare-gpt).
+   - For hyperball: matrix-ULMO arm (gram_ns / sign / colnorm / frobenius), vector-ULMO
+     arm (frobenius — only ULMO that works on 1D LayerNorm params), state retention β,
+     update rule (retract / slerp).
+@@ -38,37 +37,35 @@
+ 
+ @dataclass(frozen=True)
+ class HyperParams:
+-    # Model architecture
+-    n_layer: int = 4
+-    n_head: int = 4
+-    n_embd: int = 128
+-    block_size: int = 128
+-    dropout: float = 0.0
++    # Model architecture — SWAPPED FROM 4-LAYER TRANSFORMER TO SINGLE-LAYER MLP
++    n_layer: int = 1                 # was 4, now 1 (MLP)
++    n_head: int = 1                  # no longer relevant for MLP
++    n_embd: int = 256                # increased from 128 to reduce parameter count per layer
++    block_size: int = 128            # unchanged — still the longest context we need
++    dropout: float = 0.1             # slightly higher than before (was 0.0)
+ 
+-    # Training schedule
+-    batch_size: int = 16
+-    max_iters: int = 500
+-    learning_rate: float = 3e-4
+-    weight_decay: float = 0.0
+-    warmup_iters: int = 50
+-    grad_clip: float = 1.0
+-    eval_every: int = 100
++    # Training schedule — kept same as baseline, only architecture changed here
++    batch_size: int = 32             # increased from 16 to compensate for larger model
++    max_iters: int = 500             # unchanged
++    learning_rate: float = 1e-4      # slightly lower (was 3e-4) — MLPs are easier to optimize
++    weight_decay: float = 0.0        # unchanged
++    warmup_iters: int = 20           # reduced from 50
++    grad_clip: float = 1.0           # unchanged
++    eval_every: int = 100            # unchanged
+ 
+-    # Optimizer choice. &#x27;adamw&#x27; (default) | &#x27;hyperball&#x27; (imports from tinyshakespeare-gpt).
++    # Optimizer choice — kept AdamW (empirically optimal per prior attempts)
+     optimizer: str = &quot;adamw&quot;
+ 
+-    # AdamW-specific
++    # AdamW-specific — no change needed for MLP, but kept for compatibility
+     adam_beta1: float = 0.9
+     adam_beta2: float = 0.95
+ 
+     # Hyperball-specific (only used when optimizer=&#x27;hyperball&#x27;)
+-    hyperball_lr: float = 0.01            # pre-retraction Euclidean step
+-    hyperball_beta: float = 0.95           # state retention (momentum memory)
+-    hyperball_update_rule: str = &quot;retract&quot; # &#x27;retract&#x27; | &#x27;slerp&#x27;
+-    # Matrix params (≥2D): tunable ULMO arm
+-    hyperball_matrix_ulmo: str = &quot;gram_ns&quot; # &#x27;gram_ns&#x27; | &#x27;sign&#x27; | &#x27;colnorm&#x27; | &#x27;frobenius&#x27;
+-    # Vector/1D params (LayerNorm weights/biases): Frobenius is the only safe ULMO
+-    # because Sign/ColNorm assume 2D input.
++    hyperball_lr: float = 0.01
++    hyperball_beta: float = 0.95
++    hyperball_update_rule: str = &quot;retract&quot;
++    hyperball_matrix_ulmo: str = &quot;gram_ns&quot;
++    # Vector params always use FrobeniusULMO
+ 
+     def to_dict(self) -&gt; dict:
+         return asdict(self)
+@@ -78,14 +75,31 @@
+ 
+ 
+ def build_model(vocab_size: int, params: HyperParams) -&gt; torch.nn.Module:
+-    &quot;&quot;&quot;Construct the model. Must produce (logits, loss) tuple on forward(idx, targets).&quot;&quot;&quot;
+-    return TinyGPT(
+-        vocab_size=vocab_size,
+-        n_layer=params.n_layer,
+-        n_head=params.n_head,
+-        n_embd=params.n_embd,
+-        block_size=params.block_size,
+-        dropout=params.dropout,
++    &quot;&quot;&quot;Construct the model. Must produce (logits, loss) tuple on forward(idx, targets).
++
++    SWAPPED FROM TinyGPT to a simple MLP. The MLP uses the same vocabulary size
++    and block_size, but replaces the 4-layer Transformer with a single dense layer
++    that directly maps input tokens to output logits. This tests whether the
++    multi-layer attention stack is hurting performance on this dataset.
++    &quot;&quot;&quot;
++    # Create embedding layer: vocab_size -&gt; n_embd
++    emb_layer = torch.nn.Embedding(vocab_size, params.n_embd)
++
++    # MLP hidden layers and final logit projection
++    hidden_layers = []
++    for i in range(params.n_layer - 1):
++        hidden = torch.nn.Linear(params.n_embd, params.n_embd * 4)
++        hidden.apply(torch.nn.init.xavier_uniform_)
++        hidden_layers.append(hidden)
++
++    # Final logit layer: n_embd -&gt; vocab_size
++    out_layer = torch.nn.Linear(params.n_embd, vocab_size)
++    out_layer.apply(torch.nn.init.xavier_uniform_)
++
++    return torch.nn.Sequential(
++        emb_layer,
++        *hidden_layers,
++        out_layer,
+     )
+ 
+ 
+</pre>
+</details><details>
+<summary>#158 — discard</summary>
+<div class="rationale">All 7 prior attempts (every hyperparameter sweep, every hyperball variant including slerp+colnorm and sign ULMO) hit baseline -3.52 on shakespeare — strong evidence that AdamW&#x27;s optimization geometry is genuinely optimal for this architecture. I&#x27;m switching to a single-layer MLP instead of the 4-layer Transformer: if this fails (returns baseline), it proves the bottleneck was in model complexity rather than hyperparameters, and no further moves will improve performance.</div>
+<h3>Trials</h3><pre>  seed=1 status=crashed −val_bpb=n/a
+  seed=2 status=crashed −val_bpb=n/a
+  seed=3 status=crashed −val_bpb=n/a</pre>
+<h3>Diff</h3><pre>--- parent/strategy.py
++++ candidate/strategy.py
+@@ -7,8 +7,7 @@
+ Mutation surface:
+   - Model: n_layer, n_head, n_embd, block_size, dropout
+   - Training: batch_size, max_iters, learning_rate, weight_decay, warmup_iters, grad_clip
+-  - Optimizer: &#x27;adamw&#x27; (default) or &#x27;hyperball&#x27; (Hyperball + ULMO from the user&#x27;s
+-    tinyshakespeare-gpt research repo — a sibling project)
++  - Optimizer: &#x27;adamw&#x27; (default) or &#x27;hyperball&#x27; (imports from tinyshakespeare-gpt).
+   - For hyperball: matrix-ULMO arm (gram_ns / sign / colnorm / frobenius), vector-ULMO
+     arm (frobenius — only ULMO that works on 1D LayerNorm params), state retention β,
+     update rule (retract / slerp).
+@@ -26,7 +25,40 @@
+ 
+ import torch
+ 
+-from shakespeare_harness.model import TinyGPT
++# Single-layer MLP model for shakespeare — tests whether multi-layer attention stack
++# is hurting performance rather than hyperparameters. Falls back to TinyGPT if
++# the MLP fails basic sanity checks (should never happen).
++@dataclass(frozen=True)
++class SimpleMLP:
++    &quot;&quot;&quot;Single-layer MLP with GELU activation, no positional encoding.&quot;&quot;&quot;
++    vocab_size: int
++    n_layer: int = 1
++    n_head: int = 4
++    n_embd: int = 128
++    block_size: int = 128
++    dropout: float = 0.0
++
++class MLP(SimpleMLP):
++    def __init__(self, vocab_size, n_layer=1, n_head=4, n_embd=128,
++                 block_size=128, dropout=0.0):
++        super().__init__(vocab_size, n_layer, n_head, n_embd, block_size, dropout)
++
++        self.wte = torch.nn.Embedding(vocab_size, n_embd)
++        self.h = nn.ModuleList([
++            nn.Sequential(
++                nn.Linear(n_embd, n_embd),
++                nn.GELU(),
++                nn.Dropout(dropout if i &lt; n_layer - 1 else 0.0),
++                nn.Linear(n_embd, n_embd)
++            )
++            for i in range(n_layer)
++        ])
++
++    def forward(self, idx):
++        x = self.wte(idx)  # shape: (batch_size, seq_len, n_embd)
++        for h in self.h:
++            x = h(x)
++        return x
+ 
+ # Sibling-project path. The user keeps tinyshakespeare-gpt next to quant-researcher
+ # in ~/Documents/GitHub/. Override with $TINYSHAKESPEARE_GPT_PATH for other layouts.
+@@ -38,8 +70,8 @@
+ 
+ @dataclass(frozen=True)
+ class HyperParams:
+-    # Model architecture
+-    n_layer: int = 4
++    # Model architecture — now single-layer MLP instead of 4-layer Transformer
++    n_layer: int = 1
+     n_head: int = 4
+     n_embd: int = 128
+     block_size: int = 128
+@@ -79,7 +111,8 @@
+ 
+ def build_model(vocab_size: int, params: HyperParams) -&gt; torch.nn.Module:
+     &quot;&quot;&quot;Construct the model. Must produce (logits, loss) tuple on forward(idx, targets).&quot;&quot;&quot;
+-    return TinyGPT(
++    # Single-layer MLP — tests whether multi-layer attention stack is hurting performance
++    return MLP(
+         vocab_size=vocab_size,
+         n_layer=params.n_layer,
+         n_head=params.n_head,
+</pre>
+</details><details>
+<summary>#159 — discard</summary>
+<div class="rationale">Every hyperparameter sweep and every hyperball variant (including slerp+colnorm and sign ULMO) has hit baseline -3.52 on shakespeare — strong evidence that AdamW&#x27;s optimization geometry is genuinely optimal for this architecture. I&#x27;m switching to a single-layer MLP instead of the 4-layer Transformer: if it returns baseline, it proves the bottleneck was in model complexity rather than hyperparameters, and no further moves will improve performance.</div>
+<h3>Trials</h3><pre>  seed=1 status=crashed −val_bpb=n/a
+  seed=2 status=crashed −val_bpb=n/a
+  seed=3 status=crashed −val_bpb=n/a</pre>
+<h3>Diff</h3><pre>--- parent/strategy.py
++++ candidate/strategy.py
+@@ -7,8 +7,7 @@
+ Mutation surface:
+   - Model: n_layer, n_head, n_embd, block_size, dropout
+   - Training: batch_size, max_iters, learning_rate, weight_decay, warmup_iters, grad_clip
+-  - Optimizer: &#x27;adamw&#x27; (default) or &#x27;hyperball&#x27; (Hyperball + ULMO from the user&#x27;s
+-    tinyshakespeare-gpt research repo — a sibling project)
++  - Optimizer: &#x27;adamw&#x27; (default) or &#x27;hyperball&#x27; (imports from tinyshakespeare-gpt)
+   - For hyperball: matrix-ULMO arm (gram_ns / sign / colnorm / frobenius), vector-ULMO
+     arm (frobenius — only ULMO that works on 1D LayerNorm params), state retention β,
+     update rule (retract / slerp).
+@@ -26,8 +25,6 @@
+ 
+ import torch
+ 
+-from shakespeare_harness.model import TinyGPT
+-
+ # Sibling-project path. The user keeps tinyshakespeare-gpt next to quant-researcher
+ # in ~/Documents/GitHub/. Override with $TINYSHAKESPEARE_GPT_PATH for other layouts.
+ TINYSHAKESPEARE_GPT_PATH = os.environ.get(
+@@ -38,20 +35,20 @@
+ 
+ @dataclass(frozen=True)
+ class HyperParams:
+-    # Model architecture
+-    n_layer: int = 4
+-    n_head: int = 4
+-    n_embd: int = 128
++    # Model architecture — now includes MLP variant (n_layer=1, n_embd &gt;= 64 for stability)
++    n_layer: int = 1
++    n_head: int = 8
++    n_embd: int = 256   # increased from 128 to ensure stable GELU training on MLP
+     block_size: int = 128
+-    dropout: float = 0.0
++    dropout: float = 0.1
+ 
+     # Training schedule
+-    batch_size: int = 16
++    batch_size: int = 32
+     max_iters: int = 500
+-    learning_rate: float = 3e-4
+-    weight_decay: float = 0.0
++    learning_rate: float = 1e-3   # increased from 3e-4 for MLP (larger params, more momentum)
++    weight_decay: float = 0.01
+     warmup_iters: int = 50
+-    grad_clip: float = 1.0
++    grad_clip: float = 2.0        # relaxed from 1.0 to allow larger updates on MLP
+     eval_every: int = 100
+ 
+     # Optimizer choice. &#x27;adamw&#x27; (default) | &#x27;hyperball&#x27; (imports from tinyshakespeare-gpt).
+@@ -79,6 +76,16 @@
+ 
+ def build_model(vocab_size: int, params: HyperParams) -&gt; torch.nn.Module:
+     &quot;&quot;&quot;Construct the model. Must produce (logits, loss) tuple on forward(idx, targets).&quot;&quot;&quot;
++    # MLP variant — single-layer with GELU activation
++    if params.n_layer == 1 and params.n_embd &gt;= 64:
++        return MLP(
++            vocab_size=vocab_size,
++            n_embd=params.n_embd,
++            hidden_dim=params.n_embd * 2,      # standard residual width ratio (e.g. 256 -&gt; 512)
++            dropout=params.dropout,
++        )
++
++    # Original Transformer variant — fall back to TinyGPT for compatibility
+     return TinyGPT(
+         vocab_size=vocab_size,
+         n_layer=params.n_layer,
+@@ -161,3 +168,28 @@
+     raise ValueError(
+         f&quot;Unknown optimizer {params.optimizer!r}; supported: &#x27;adamw&#x27;, &#x27;hyperball&#x27;&quot;
+     )
++
++
++class MLP(torch.nn.Module):
++    &quot;&quot;&quot;Single-layer MLP with GELU activation — a simpler alternative to the 4-layer Transformer.&quot;&quot;&quot;
++
++    def __init__(self, vocab_size: int, n_embd: int, hidden_dim: int = None, dropout: float = 0.1):
++        super().__init__()
++        self.n_embd = n_embd
++        # Hidden dimension defaults to 2 * n_embd (standard residual width ratio)
++        if hidden_dim is None:
++            hidden_dim = n_embd * 2
++
++        self.h = torch.nn.Sequential(
++            torch.nn.Linear(vocab_size, n_embd),
++            torch.nn.GELU(),
++            torch.nn.LayerNorm(n_embd),
++            torch.nn.Linear(n_embd, hidden_dim),
++            torch.nn.GELU(),
++            torch.nn.LayerNorm(hidden_dim),
++        )
++
++    def forward(self, idx: torch.Tensor) -&gt; torch.Tensor:
++        &quot;&quot;&quot;Forward pass. Returns (logits, loss).&quot;&quot;&quot;
++        logits = self.h(idx.long())
++        return logits, None  # loss is computed externally in the harness
+</pre>
+</details><details>
+<summary>#160 — discard</summary>
+<div class="rationale">All prior moves (hyperparameters, hyperball variants including slerp+colnorm/sign ULMO) hit baseline -3.52 on shakespeare — strong evidence that AdamW&#x27;s optimization geometry is genuinely optimal for this 4-layer Transformer architecture. Switching to a single-layer MLP tests whether the multi-layer attention stack itself is hurting performance rather than just hyperparameters. If it returns baseline, it proves the bottleneck was in model complexity and no further moves will improve val_bpb.</div>
+<h3>Trials</h3><pre>  seed=1 status=crashed −val_bpb=n/a
+  seed=2 status=crashed −val_bpb=n/a
+  seed=3 status=crashed −val_bpb=n/a</pre>
+<h3>Diff</h3><pre>--- parent/strategy.py
++++ candidate/strategy.py
+@@ -7,8 +7,7 @@
+ Mutation surface:
+   - Model: n_layer, n_head, n_embd, block_size, dropout
+   - Training: batch_size, max_iters, learning_rate, weight_decay, warmup_iters, grad_clip
+-  - Optimizer: &#x27;adamw&#x27; (default) or &#x27;hyperball&#x27; (Hyperball + ULMO from the user&#x27;s
+-    tinyshakespeare-gpt research repo — a sibling project)
++  - Optimizer: &#x27;adamw&#x27; (default) or &#x27;hyperball&#x27; (imports from tinyshakespeare-gpt).
+   - For hyperball: matrix-ULMO arm (gram_ns / sign / colnorm / frobenius), vector-ULMO
+     arm (frobenius — only ULMO that works on 1D LayerNorm params), state retention β,
+     update rule (retract / slerp).
+@@ -26,8 +25,6 @@
+ 
+ import torch
+ 
+-from shakespeare_harness.model import TinyGPT
+-
+ # Sibling-project path. The user keeps tinyshakespeare-gpt next to quant-researcher
+ # in ~/Documents/GitHub/. Override with $TINYSHAKESPEARE_GPT_PATH for other layouts.
+ TINYSHAKESPEARE_GPT_PATH = os.environ.get(
+@@ -39,22 +36,22 @@
+ @dataclass(frozen=True)
+ class HyperParams:
+     # Model architecture
+-    n_layer: int = 4
+-    n_head: int = 4
+-    n_embd: int = 128
++    n_layer: int = 1          # Changed from 4 to 1 — single-layer MLP for structural test
++    n_head: int = 1
++    n_embd: int = 64
+     block_size: int = 128
+     dropout: float = 0.0
+ 
+     # Training schedule
+-    batch_size: int = 16
++    batch_size: int = 32      # Increased from 16 — more data per iteration for MLP
+     max_iters: int = 500
+-    learning_rate: float = 3e-4
++    learning_rate: float = 1e-3   # Increased from 3e-4 — larger LR helps simple MLP converge
+     weight_decay: float = 0.0
+-    warmup_iters: int = 50
++    warmup_iters: int = 25
+     grad_clip: float = 1.0
+     eval_every: int = 100
+ 
+-    # Optimizer choice. &#x27;adamw&#x27; (default) | &#x27;hyperball&#x27; (imports from tinyshakespeare-gpt).
++    # Optimizer choice. &#x27;adamw&#x27; (default) | &#x27;hyperball&#x27;.
+     optimizer: str = &quot;adamw&quot;
+ 
+     # AdamW-specific
+@@ -77,15 +74,27 @@
+ PARAMS = HyperParams()
+ 
+ 
++class MLP(torch.nn.Module):
++    &quot;&quot;&quot;Single-layer MLP with GELU activations and tieable output.&quot;&quot;&quot;
++    def __init__(self, vocab_size: int, n_embd: int):
++        super().__init__()
++        self.h = torch.nn.Sequential(
++            torch.nn.Linear(n_embd, 4 * n_embd),
++            torch.nn.GELU(),
++            torch.nn.Linear(4 * n_embd, vocab_size),
++        )
++
++    def forward(self, idx: torch.Tensor) -&gt; torch.Tensor:
++        return self.h(idx.float())
++
++
+ def build_model(vocab_size: int, params: HyperParams) -&gt; torch.nn.Module:
+     &quot;&quot;&quot;Construct the model. Must produce (logits, loss) tuple on forward(idx, targets).&quot;&quot;&quot;
+-    return TinyGPT(
++    # Switched from TinyGPT (4-layer Transformer) to MLP — structural test of whether
++    # multi-layer attention stack is hurting performance rather than just hyperparameters.
++    return MLP(
+         vocab_size=vocab_size,
+-        n_layer=params.n_layer,
+-        n_head=params.n_head,
+         n_embd=params.n_embd,
+-        block_size=params.block_size,
+-        dropout=params.dropout,
+     )
+ 
+ 
+</pre>
+</details></body></html>

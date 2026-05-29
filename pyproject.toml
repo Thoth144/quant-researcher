@@ -1,0 +1,25 @@
+[project]
+name = "quant-researcher"
+version = "0.1.0"
+description = "Local-first finance Researcher: agent-driven strategy mutation against a locked walk-forward backtest, instrumented for reasoning-quality measurement."
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=0.40",
+    "lxml>=5.0",
+    "numpy>=2.0",
+    "pandas>=2.2",
+    "pyarrow>=17",
+    "rich>=13.7",
+    "scikit-learn>=1.4",
+    "scipy>=1.13",
+    "torch>=2.2",
+    "yfinance>=0.2.40",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

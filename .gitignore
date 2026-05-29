@@ -1,0 +1,21 @@
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+.DS_Store
+
+# Local data + state — never check these in
+data/cache/
+# ~1MB corpus; trainer re-downloads on first run
+data/shakespeare_input.txt
+runs.db
+runs.db-shm
+runs.db-wal
+.anthropic_key
+
+# Run artifacts (transient; produced by launchers and the loop)
+*.log
+*.pid
+*.parent_backup

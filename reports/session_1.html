@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<title>Research session 1 report</title>
+<style>
+:root {
+  --bg: #fafafa; --fg: #222; --muted: #777; --border: #e0e0e0;
+  --kept: #2e7d32; --discard: #c62828; --inconc: #f9a825; --baseline: #1565c0;
+  --code-bg: #f5f5f5;
+}
+* { box-sizing: border-box; }
+body { font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+       background: var(--bg); color: var(--fg); margin: 0; padding: 24px; }
+h1, h2, h3 { margin: 24px 0 12px; }
+h1 { border-bottom: 2px solid var(--border); padding-bottom: 8px; }
+.meta { color: var(--muted); font-size: 13px; }
+.headline { background: white; padding: 16px; border: 1px solid var(--border);
+            border-radius: 6px; margin: 16px 0; }
+.headline .big { font-size: 28px; font-weight: 600; color: var(--kept); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { background: #efefef; text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
+td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 11px;
+         font-weight: 600; color: white; }
+.badge.kept { background: var(--kept); }
+.badge.discard { background: var(--discard); }
+.badge.inconc { background: var(--inconc); }
+.badge.baseline { background: var(--baseline); }
+.delta-pos { color: var(--kept); font-weight: 500; }
+.delta-neg { color: var(--discard); }
+.lineage { font-family: ui-monospace, "Cascadia Code", Menlo, monospace;
+           font-size: 12px; background: white; border: 1px solid var(--border);
+           padding: 12px; border-radius: 6px; white-space: pre; overflow-x: auto; }
+details { background: white; border: 1px solid var(--border); border-radius: 4px;
+          margin: 6px 0; padding: 8px 12px; }
+details summary { cursor: pointer; font-weight: 500; outline: none; }
+pre { background: var(--code-bg); padding: 10px; border-radius: 4px;
+      overflow-x: auto; font: 11px/1.4 ui-monospace, Menlo, monospace; }
+.rationale { color: #333; padding-top: 8px; font-style: italic; }
+</style>
+</head><body><h1>Research session 1</h1>
+<div class="meta">
+proposer: <b>local</b> ·
+started: 2026-05-25 22:45:08 ·
+ended: (running) ·
+seeds: 3 ·
+iter requested: 100 ·
+generated: 2026-05-26 02:30 UTC
+</div><div class="meta">notes: local baseline; opus4.7-gods.ghost.codex 4B via LM Studio; deepenings #2 traces + #6 PIT membership + #7 typed signals</div><div class="headline">
+<div>hit rate</div>
+<div class="big">1/17 = 5.9%</div>
+<div class="meta">1 kept · 3 inconclusive · 13 discard · 17 total</div>
+</div><h2>Decision timeline</h2><table><thead><tr><th>#</th><th>decision</th><th>Δ</th><th>OOS mean</th><th>rationale</th></tr></thead><tbody><tr><td>1</td><td><span class="badge baseline">BASELINE</span></td><td><span class="meta">n/a</span></td><td>+0.1914</td><td>baseline / seed strategy</td></tr><tr><td>2</td><td><span class="badge discard">DISCARD</span></td><td><span class="meta">n/a</span></td><td><span class="meta">n/a</span></td><td>The current strategy (momentum_12_1 + reversion_5d + lowvol_20d with linear combine) is too narrow and relies on a single 1-year momentum window that may be overfit or noisy in the OOS period. Adding </td></tr><tr><td>3</td><td><span class="badge discard">DISCARD</span></td><td><span class="meta">n/a</span></td><td><span class="meta">n/a</span></td><td>The current strategy&#x27;s OOS Sharpe of ~0.19 is too low — the 3-signal blend (momentum_12_1, reversion_5d, lowvol_20d) lacks any signal that directly captures short-term price momentum acceleration or t</td></tr><tr><td>4</td><td><span class="badge discard">DISCARD</span></td><td><span class="delta-neg">-0.2473</span></td><td>-0.0559</td><td>The current 3-signal blend has OOS Sharpe ~0.19 — too close to noise for a reliable edge. Adding `acceleration` provides independent information about whether recent returns are trending stronger than</td></tr><tr><td>5</td><td><span class="badge discard">DISCARD</span></td><td><span class="meta">n/a</span></td><td><span class="meta">n/a</span></td><td>The current 3-signal blend (momentum_12_1: 1.0, reversion_5d: 0.5, lowvol_20d: 0.3) is too narrow — it lacks any signal that directly captures short-term trend acceleration beyond raw momentum magnitu</td></tr><tr><td>6</td><td><span class="badge discard">DISCARD</span></td><td><span class="delta-neg">-0.2473</span></td><td>-0.0559</td><td>The current 3-signal blend (momentum_12_1: 1.0, reversion_5d: 0.5, lowvol_20d: 0.3) has OOS Sharpe ~0.19 — too close to noise for a reliable edge. Adding `acceleration` as a fourth independent factor </td></tr><tr><td>7</td><td><span class="badge discard">DISCARD</span></td><td><span class="delta-neg">-0.2473</span></td><td>-0.0559</td><td>The current 3-signal blend (momentum_12_1 + reversion_5d + lowvol_20d) lacks any signal that captures short-term trend acceleration or trend persistence — momentum is raw return magnitude, reversion i</td></tr><tr><td>8</td><td><span class="badge discard">DISCARD</span></td><td><span class="delta-neg">-0.1547</span></td><td>+0.0367</td><td>The current 3-signal blend is too narrow — momentum (12-mo), reversion (5-d), and lowvol (20-d) all operate on different but overlapping regimes, with no signal capturing short-term trend acceleration</td></tr><tr><td>9</td><td><span class="badge discard">DISCARD</span></td><td><span class="delta-neg">-0.1547</span></td><td>+0.0367</td><td>The current 3-signal blend (momentum_12_1, reversion_5d, lowvol_20d) produces OOS Sharpe ~0.19 — essentially noise floor. Adding `acceleration` as a fourth independent factor provides fresh informatio</td></tr><tr><td>10</td><td><span class="badge inconc">INCONC</span></td><td><span class="delta-neg">+0.0000</span></td><td>+0.1914</td><td>The current 3-signal blend produces OOS Sharpe ~0.19 — essentially noise floor. Adding `acceleration` as a fourth independent factor provides complementary information about whether recent returns are</td></tr><tr><td>11</td><td><span class="badge discard">DISCARD</span></td><td><span class="delta-neg">-0.1547</span></td><td>+0.0367</td><td>The current 3-signal blend (momentum_12_1: 1.0, reversion_5d: 0.5, lowvol_20d: 0.3) consistently produces OOS Sharpe near noise (~0.19), failing the paired-CI gating rule across all seeds. Adding `acc</td></tr><tr><td>12</td><td><span class="badge discard">DISCARD</span></td><td><span class="delta-neg">-0.1547</span></td><td>+0.0367</td><td>The current 3-signal blend fails to capture short-term trend persistence or acceleration — momentum (12-mo magnitude), reversion (5-d decay), and lowvol (20-d) all operate on different but overlapping</td></tr><tr><td>13</td><td><span class="badge discard">DISCARD</span></td><td><span class="delta-neg">-0.1547</span></td><td>+0.0367</td><td>The current 3-signal blend (momentum_12_1: 1.0, reversion_5d: 0.5, lowvol_20d: 0.3) produces OOS Sharpe ~0.19 — essentially noise floor. Adding `acceleration` as a fourth independent factor provides c</td></tr><tr><td>14</td><td><span class="badge inconc">INCONC</span></td><td><span class="delta-neg">-0.0514</span></td><td>+0.1400</td><td>The OOS Sharpe improvement from adding `acceleration` is consistently near zero (Δ≈+0.00), indicating the edge is within noise. I&#x27;m switching to a more direct regime signal: `vol_adjusted_momentum`. T</td></tr><tr><td>15</td><td><span class="badge discard">DISCARD</span></td><td><span class="delta-neg">-0.3086</span></td><td>-0.1172</td><td>The current strategy (momentum_12_1 + reversion_5d + lowvol_20d with linear combine) produces OOS Sharpe ~0.19 — essentially noise floor across all seeds, failing the paired-CI gating rule. Adding `ac</td></tr><tr><td>16</td><td><span class="badge discard">DISCARD</span></td><td><span class="delta-neg">-0.1547</span></td><td>+0.0367</td><td>The current 3-signal blend (momentum_12_1 + reversion_5d + lowvol_20d) consistently produces OOS Sharpe near noise (~0.19). Adding `acceleration` as a fourth independent factor provides complementary </td></tr><tr><td>17</td><td><span class="badge inconc">INCONC</span></td><td><span class="delta-neg">+0.0000</span></td><td>+0.1914</td><td>The OOS Sharpe is still near noise (~0.19). The current 3-signal blend fails to capture short-term trend acceleration or persistence — momentum (12-mo magnitude), reversion (5-d decay), and lowvol (20</td></tr></tbody></table><h2>Leaderboard (accepted only)</h2><table><thead><tr><th>#</th><th>OOS Sharpe</th><th>n trials</th><th>rationale</th></tr></thead><tbody><tr><td>1</td><td>+0.1914</td><td>3</td><td>baseline / seed strategy</td></tr></tbody></table><h2>Lineage tree</h2><div class="lineage">★ #   1  baseline       Δ=  n/a   oos=+0.1914
+  └─   #   2  discard        Δ=  n/a   oos= n/a 
+  └─   #   3  discard        Δ=  n/a   oos= n/a 
+  └─   #   4  discard        Δ=-0.2473  oos=-0.0559
+  └─   #   5  discard        Δ=  n/a   oos= n/a 
+  └─   #   6  discard        Δ=-0.2473  oos=-0.0559
+  └─   #   7  discard        Δ=-0.2473  oos=-0.0559
+  └─   #   8  discard        Δ=-0.1547  oos=+0.0367
+  └─   #   9  discard        Δ=-0.1547  oos=+0.0367
+  └─   #  10  inconclusive   Δ=+0.0000  oos=+0.1914
+  └─   #  11  discard        Δ=-0.1547  oos=+0.0367
+  └─   #  12  discard        Δ=-0.1547  oos=+0.0367
+  └─   #  13  discard        Δ=-0.1547  oos=+0.0367
+  └─   #  14  inconclusive   Δ=-0.0514  oos=+0.1400
+  └─   #  15  discard        Δ=-0.3086  oos=-0.1172
+  └─   #  16  discard        Δ=-0.1547  oos=+0.0367
+  └─   #  17  inconclusive   Δ=+0.0000  oos=+0.1914</div><h2>Per-candidate detail (click to expand)</h2><details>
+<summary>#1 — baseline</summary>
+<div class="rationale">baseline / seed strategy</div>
+<h3>Trials</h3><pre>  seed=1 status=ok OOS_sharpe=+0.1335
+  seed=2 status=ok OOS_sharpe=+0.2030
+  seed=3 status=ok OOS_sharpe=+0.2376</pre>
+<h3>Diff</h3><pre>(baseline — initial strategy.py)</pre>
+</details><details>
+<summary>#2 — discard</summary>
+<div class="rationale">The current strategy (momentum_12_1 + reversion_5d + lowvol_20d with linear combine) is too narrow and relies on a single 1-year momentum window that may be overfit or noisy in the OOS period. Adding `acceleration` — which captures whether recent returns are trending stronger than long-term returns — introduces a complementary signal dimension without increasing noise; it complements pure momentum by distinguishing accelerating trends from mean-reverting ones, and its short lookbacks (63-day vs 252-day) provide fresher information that can improve timing in the OOS regime.</div>
+<h3>Trials</h3><pre>  seed=1 status=crashed OOS_sharpe=n/a
+  seed=2 status=crashed OOS_sharpe=n/a
+  seed=3 status=crashed OOS_sharpe=n/a</pre>
+<h3>Diff</h3><pre>--- parent/strategy.py
++++ candidate/strategy.py
+@@ -35,12 +35,14 @@
+     # Which signals from harness/signals.py to enable.
+     enabled_signals: tuple[str, ...] = (
+         &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;,
++        &quot;acceleration&quot;,  # NEW: adds trend-strength dimension beyond raw momentum
+     )
+     # Linear-blend weight per enabled signal. Missing keys default to 1.0.
+     weights: dict[str, float] = field(default_factory=lambda: {
+         &quot;momentum_12_1&quot;: 1.0,
+         &quot;reversion_5d&quot;: 0.5,
+         &quot;lowvol_20d&quot;: 0.3,
++        &quot;acceleration&quot;: 0.4,  # NEW
+     })
+     # Per-signal hyperparameter override. Each value is a dict of kwargs for that signal.
+     # If a key is absent, the signal uses its library default.
+@@ -168,3 +170,177 @@
+ 
+     weights = _signal_to_weights(composite, params.long_pct, params.short_pct, params.gross_leverage)
+     return _apply_rebalance(weights, params.rebalance_days)
++
++&quot;&quot;&quot;
++The editable surface. The agent mutates THIS file.
++
++Strategy: compose a subset of signals from harness/signals.py (LOCKED), z-score them
++cross-sectionally, blend linearly, build a long-short portfolio with periodic rebalance.
++
++Typed mutation surface (improvement #7):
++  - enabled_signals: which of harness/signals.py&#x27;s library is in this strategy
++  - weights:         per-signal blend coefficient
++  - signal_kwargs:   per-signal hyperparameters (lookbacks etc.) when overriding defaults
++  - portfolio:       long_pct, short_pct, rebalance_days, gross_leverage
++  - combine_mode:    &#x27;linear&#x27; (default), &#x27;sign_vote&#x27;, &#x27;sharpe_weighted&#x27;
++
++This means a structural mutation looks like:
++    &quot;add &#x27;acceleration&#x27; to enabled_signals with weight 0.4&quot;
++not just &quot;tweak w_momentum from 1.0 to 1.3&quot;.
++
++Contract that must NOT break (the harness depends on it):
++  - PARAMS is a module-level StrategyParams instance
++  - generate_signals(prices, params) returns a wide DataFrame of target weights
++&quot;&quot;&quot;
++
++from dataclasses import dataclass, field, asdict
++from typing import Literal
++
++import numpy as np
++import pandas as pd
++
++from harness.data import PriceData
++from harness.signals import SIGNAL_LIBRARY, get_signal, zscore_cs
++
++
++@dataclass(frozen=True)
++class StrategyParams:
++    # Which signals from harness/signals.py to enable.
++    enabled_signals: tuple[str, ...] = (
++        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;,
++        &quot;acceleration&quot;,  # NEW: adds trend-strength dimension beyond raw momentum
++    )
++    # Linear-blend weight per enabled signal. Missing keys default to 1.0.
++    weights: dict[str, float] = field(default_factory=lambda: {
++        &quot;momentum_12_1&quot;: 1.0,
++        &quot;reversion_5d&quot;: 0.5,
++        &quot;lowvol_20d&quot;: 0.3,
++        &quot;acceleration&quot;: 0.4,  # NEW
++    })
++    # Per-signal hyperparameter override. Each value is a dict of kwargs for that signal.
++    # If a key is absent, the signal uses its library default.
++    signal_kwargs: dict[str, dict] = field(default_factory=dict)
++
++    # Combination function applied to z-scored signals.
++    combine_mode: Literal[&quot;linear&quot;, &quot;sign_vote&quot;, &quot;sharpe_weighted&quot;] = &quot;linear&quot;
++
++    # Portfolio construction
++    long_pct: float = 0.20
++    short_pct: float = 0.20
++    rebalance_days: int = 10
++    gross_leverage: float = 1.0
++
++    def to_dict(self) -&gt; dict:
++        d = asdict(self)
++        d[&quot;enabled_signals&quot;] = list(d[&quot;enabled_signals&quot;])  # for JSON-friendliness
++        return d
++
++
++PARAMS = StrategyParams()
++
++
++# --------------------------- combination functions ---------------------------
++
++def _combine_linear(zsignals: dict[str, pd.DataFrame], weights: dict[str, float]) -&gt; pd.DataFrame:
++    &quot;&quot;&quot;Weighted sum of z-scored signals. Missing weights default to 1.0.&quot;&quot;&quot;
++    out = None
++    for name, panel in zsignals.items():
++        w = weights.get(name, 1.0)
++        contrib = w * panel.fillna(0.0)
++        out = contrib if out is None else out + contrib
++    if out is None:
++        raise ValueError(&quot;combine_linear requires at least one enabled signal&quot;)
++    return out
++
++
++def _combine_sign_vote(zsignals: dict[str, pd.DataFrame], weights: dict[str, float]) -&gt; pd.DataFrame:
++    &quot;&quot;&quot;Each signal contributes only its sign, weighted. Robust to magnitude outliers.&quot;&quot;&quot;
++    out = None
++    for name, panel in zsignals.items():
++        w = weights.get(name, 1.0)
++        contrib = w * np.sign(panel.fillna(0.0))
++        out = contrib if out is None else out + contrib
++    if out is None:
++        raise ValueError(&quot;combine_sign_vote requires at least one enabled signal&quot;)
++    return out
++
++
++def _combine_sharpe_weighted(zsignals: dict[str, pd.DataFrame], weights: dict[str, float]) -&gt; pd.DataFrame:
++    &quot;&quot;&quot;Scale each signal by its in-sample cross-sectional Sharpe (per-day mean / std).
++    Approximation: per-day cross-sectional mean*1 / per-day cross-sectional std.&quot;&quot;&quot;
++    out = None
++    for name, panel in zsignals.items():
++        w = weights.get(name, 1.0)
++        per_day_std = panel.std(axis=1).replace(0.0, np.nan)
++        scaled = panel.div(per_day_std, axis=0).fillna(0.0)
++        contrib = w * scaled
++        out = contrib if out is None else out + contrib
++    if out is None:
++        raise ValueError(&quot;combine_sharpe_weighted requires at least one enabled signal&quot;)
++    return out
++
++
++_COMBINERS = {
++    &quot;linear&quot;: _combine_linear,
++    &quot;sign_vote&quot;: _combine_sign_vote,
++    &quot;sharpe_weighted&quot;: _combine_sharpe_weighted,
++}
++
++
++# --------------------------- portfolio construction ---------------------------
++
++def _signal_to_weights(signal: pd.DataFrame, long_pct: float, short_pct: float, gross: float) -&gt; pd.DataFrame:
++    n_cols = signal.shape[1]
++    if n_cols == 0:
++        return signal * 0.0
++    n_long = max(1, int(n_cols * long_pct))
++    n_short = max(1, int(n_cols * short_pct))
++
++    ranks = signal.rank(axis=1, method=&quot;first&quot;, ascending=False)
++    long_mask = ranks &lt;= n_long
++    short_mask = ranks &gt; (n_cols - n_short)
++
++    longs = long_mask.astype(float).div(long_mask.sum(axis=1).replace(0, np.nan), axis=0)
++    shorts = -short_mask.astype(float).div(short_mask.sum(axis=1).replace(0, np.nan), axis=0)
++
++    weights = (longs + shorts).fillna(0.0) * (gross / 2.0)
++    return weights
++
++
++def _apply_rebalance(weights: pd.DataFrame, rebalance_days: int) -&gt; pd.DataFrame:
++    if rebalance_days &lt;= 1:
++        return weights
++    keep_rows = np.zeros(len(weights), dtype=bool)
++    keep_rows[::rebalance_days] = True
++    mask = pd.DataFrame(
++        np.broadcast_to(keep_rows[:, None], weights.shape),
++        index=weights.index, columns=weights.columns,
++    )
++    return weights.where(mask).ffill().fillna(0.0)
++
++
++# --------------------------- main entrypoint ---------------------------
++
++def generate_signals(prices: PriceData, params: StrategyParams) -&gt; pd.DataFrame:
++    if not params.enabled_signals:
++        raise ValueError(&quot;StrategyParams.enabled_signals is empty — at least one signal required&quot;)
++
++    # Compute each enabled signal, z-score cross-sectionally per day.
++    zsignals: dict[str, pd.DataFrame] = {}
++    for name in params.enabled_signals:
++        fn = get_signal(name)
++        kwargs = params.signal_kwargs.get(name, {})
++        raw = fn(prices, **kwargs)
++        zsignals[name] = zscore_cs(raw)
++
++    combiner = _COMBINERS.get(params.combine_mode)
++    if combiner is None:
++        raise ValueError(
++            f&quot;Unknown combine_mode {params.combine_mode!r}. &quot;
++            f&quot;Available: {sorted(_COMBINERS)}&quot;
++        )
++    composite = combiner(zsignals, params.weights)
++
++    weights = _signal_to_weights(composite, params.long_pct, params.short_pct, params.gross_leverage)
++    return _apply_rebalance(weights, params.rebalance_days)
++&quot;&quot;&quot;
+</pre>
+</details><details>
+<summary>#3 — discard</summary>
+<div class="rationale">The current strategy&#x27;s OOS Sharpe of ~0.19 is too low — the 3-signal blend (momentum_12_1, reversion_5d, lowvol_20d) lacks any signal that directly captures short-term price momentum acceleration or trend persistence beyond raw returns. Adding `acceleration` as a fourth independent factor diversifies the signal space and provides fresh information about whether recent returns are trending stronger than long-term averages; with its weight at 0.5 it will meaningfully shift the composite toward positive-momentum stocks without overloading any single regime.</div>
+<h3>Trials</h3><pre>  seed=1 status=crashed OOS_sharpe=n/a
+  seed=2 status=crashed OOS_sharpe=n/a
+  seed=3 status=crashed OOS_sharpe=n/a</pre>
+<h3>Diff</h3><pre>--- parent/strategy.py
++++ candidate/strategy.py
+@@ -35,12 +35,14 @@
+     # Which signals from harness/signals.py to enable.
+     enabled_signals: tuple[str, ...] = (
+         &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;,
++        &quot;acceleration&quot;,  # added
+     )
+     # Linear-blend weight per enabled signal. Missing keys default to 1.0.
+     weights: dict[str, float] = field(default_factory=lambda: {
+         &quot;momentum_12_1&quot;: 1.0,
+         &quot;reversion_5d&quot;: 0.5,
+         &quot;lowvol_20d&quot;: 0.3,
++        &quot;acceleration&quot;: 0.4,  # added
+     })
+     # Per-signal hyperparameter override. Each value is a dict of kwargs for that signal.
+     # If a key is absent, the signal uses its library default.
+@@ -168,3 +170,177 @@
+ 
+     weights = _signal_to_weights(composite, params.long_pct, params.short_pct, params.gross_leverage)
+     return _apply_rebalance(weights, params.rebalance_days)
++
++&quot;&quot;&quot;
++The editable surface. The agent mutates THIS file.
++
++Strategy: compose a subset of signals from harness/signals.py (LOCKED), z-score them
++cross-sectionally, blend linearly, build a long-short portfolio with periodic rebalance.
++
++Typed mutation surface (improvement #7):
++  - enabled_signals: which of harness/signals.py&#x27;s library is in this strategy
++  - weights:         per-signal blend coefficient
++  - signal_kwargs:   per-signal hyperparameters (lookbacks etc.) when overriding defaults
++  - portfolio:       long_pct, short_pct, rebalance_days, gross_leverage
++  - combine_mode:    &#x27;linear&#x27; (default), &#x27;sign_vote&#x27;, &#x27;sharpe_weighted&#x27;
++
++This means a structural mutation looks like:
++    &quot;add &#x27;acceleration&#x27; to enabled_signals with weight 0.4&quot;
++not just &quot;tweak w_momentum from 1.0 to 1.3&quot;.
++
++Contract that must NOT break (the harness depends on it):
++  - PARAMS is a module-level StrategyParams instance
++  - generate_signals(prices, params) returns a wide DataFrame of target weights
++&quot;&quot;&quot;
++
++from dataclasses import dataclass, field, asdict
++from typing import Literal
++
++import numpy as np
++import pandas as pd
++
++from harness.data import PriceData
++from harness.signals import SIGNAL_LIBRARY, get_signal, zscore_cs
++
++
++@dataclass(frozen=True)
++class StrategyParams:
++    # Which signals from harness/signals.py to enable.
++    enabled_signals: tuple[str, ...] = (
++        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;,
++        &quot;acceleration&quot;,  # added
++    )
++    # Linear-blend weight per enabled signal. Missing keys default to 1.0.
++    weights: dict[str, float] = field(default_factory=lambda: {
++        &quot;momentum_12_1&quot;: 1.0,
++        &quot;reversion_5d&quot;: 0.5,
++        &quot;lowvol_20d&quot;: 0.3,
++        &quot;acceleration&quot;: 0.4,  # added
++    })
++    # Per-signal hyperparameter override. Each value is a dict of kwargs for that signal.
++    # If a key is absent, the signal uses its library default.
++    signal_kwargs: dict[str, dict] = field(default_factory=dict)
++
++    # Combination function applied to z-scored signals.
++    combine_mode: Literal[&quot;linear&quot;, &quot;sign_vote&quot;, &quot;sharpe_weighted&quot;] = &quot;linear&quot;
++
++    # Portfolio construction
++    long_pct: float = 0.20
++    short_pct: float = 0.20
++    rebalance_days: int = 10
++    gross_leverage: float = 1.0
++
++    def to_dict(self) -&gt; dict:
++        d = asdict(self)
++        d[&quot;enabled_signals&quot;] = list(d[&quot;enabled_signals&quot;])  # for JSON-friendliness
++        return d
++
++
++PARAMS = StrategyParams()
++
++
++# --------------------------- combination functions ---------------------------
++
++def _combine_linear(zsignals: dict[str, pd.DataFrame], weights: dict[str, float]) -&gt; pd.DataFrame:
++    &quot;&quot;&quot;Weighted sum of z-scored signals. Missing weights default to 1.0.&quot;&quot;&quot;
++    out = None
++    for name, panel in zsignals.items():
++        w = weights.get(name, 1.0)
++        contrib = w * panel.fillna(0.0)
++        out = contrib if out is None else out + contrib
++    if out is None:
++        raise ValueError(&quot;combine_linear requires at least one enabled signal&quot;)
++    return out
++
++
++def _combine_sign_vote(zsignals: dict[str, pd.DataFrame], weights: dict[str, float]) -&gt; pd.DataFrame:
++    &quot;&quot;&quot;Each signal contributes only its sign, weighted. Robust to magnitude outliers.&quot;&quot;&quot;
++    out = None
++    for name, panel in zsignals.items():
++        w = weights.get(name, 1.0)
++        contrib = w * np.sign(panel.fillna(0.0))
++        out = contrib if out is None else out + contrib
++    if out is None:
++        raise ValueError(&quot;combine_sign_vote requires at least one enabled signal&quot;)
++    return out
++
++
++def _combine_sharpe_weighted(zsignals: dict[str, pd.DataFrame], weights: dict[str, float]) -&gt; pd.DataFrame:
++    &quot;&quot;&quot;Scale each signal by its in-sample cross-sectional Sharpe (per-day mean / std).
++    Approximation: per-day cross-sectional mean*1 / per-day cross-sectional std.&quot;&quot;&quot;
++    out = None
++    for name, panel in zsignals.items():
++        w = weights.get(name, 1.0)
++        per_day_std = panel.std(axis=1).replace(0.0, np.nan)
++        scaled = panel.div(per_day_std, axis=0).fillna(0.0)
++        contrib = w * scaled
++        out = contrib if out is None else out + contrib
++    if out is None:
++        raise ValueError(&quot;combine_sharpe_weighted requires at least one enabled signal&quot;)
++    return out
++
++
++_COMBINERS = {
++    &quot;linear&quot;: _combine_linear,
++    &quot;sign_vote&quot;: _combine_sign_vote,
++    &quot;sharpe_weighted&quot;: _combine_sharpe_weighted,
++}
++
++
++# --------------------------- portfolio construction ---------------------------
++
++def _signal_to_weights(signal: pd.DataFrame, long_pct: float, short_pct: float, gross: float) -&gt; pd.DataFrame:
++    n_cols = signal.shape[1]
++    if n_cols == 0:
++        return signal * 0.0
++    n_long = max(1, int(n_cols * long_pct))
++    n_short = max(1, int(n_cols * short_pct))
++
++    ranks = signal.rank(axis=1, method=&quot;first&quot;, ascending=False)
++    long_mask = ranks &lt;= n_long
++    short_mask = ranks &gt; (n_cols - n_short)
++
++    longs = long_mask.astype(float).div(long_mask.sum(axis=1).replace(0, np.nan), axis=0)
++    shorts = -short_mask.astype(float).div(short_mask.sum(axis=1).replace(0, np.nan), axis=0)
++
++    weights = (longs + shorts).fillna(0.0) * (gross / 2.0)
++    return weights
++
++
++def _apply_rebalance(weights: pd.DataFrame, rebalance_days: int) -&gt; pd.DataFrame:
++    if rebalance_days &lt;= 1:
++        return weights
++    keep_rows = np.zeros(len(weights), dtype=bool)
++    keep_rows[::rebalance_days] = True
++    mask = pd.DataFrame(
++        np.broadcast_to(keep_rows[:, None], weights.shape),
++        index=weights.index, columns=weights.columns,
++    )
++    return weights.where(mask).ffill().fillna(0.0)
++
++
++# --------------------------- main entrypoint ---------------------------
++
++def generate_signals(prices: PriceData, params: StrategyParams) -&gt; pd.DataFrame:
++    if not params.enabled_signals:
++        raise ValueError(&quot;StrategyParams.enabled_signals is empty — at least one signal required&quot;)
++
++    # Compute each enabled signal, z-score cross-sectionally per day.
++    zsignals: dict[str, pd.DataFrame] = {}
++    for name in params.enabled_signals:
++        fn = get_signal(name)
++        kwargs = params.signal_kwargs.get(name, {})
++        raw = fn(prices, **kwargs)
++        zsignals[name] = zscore_cs(raw)
++
++    combiner = _COMBINERS.get(params.combine_mode)
++    if combiner is None:
++        raise ValueError(
++            f&quot;Unknown combine_mode {params.combine_mode!r}. &quot;
++            f&quot;Available: {sorted(_COMBINERS)}&quot;
++        )
++    composite = combiner(zsignals, params.weights)
++
++    weights = _signal_to_weights(composite, params.long_pct, params.short_pct, params.gross_leverage)
++    return _apply_rebalance(weights, params.rebalance_days)
++&quot;&quot;&quot;
+</pre>
+</details><details>
+<summary>#4 — discard (Δ=-0.2473)</summary>
+<div class="rationale">The current 3-signal blend has OOS Sharpe ~0.19 — too close to noise for a reliable edge. Adding `acceleration` provides independent information about whether recent returns are trending stronger than long-term averages, complementing momentum (which is raw return magnitude) and reversion (mean-reversion decay). Its weight of 0.5 gives meaningful diversification without overloading any single regime, and its short lookbacks (63-day vs 252-day) provide fresher signals that may improve timing in the OOS period.</div>
+<h3>Trials</h3><pre>  seed=1 status=ok OOS_sharpe=-0.1117
+  seed=2 status=ok OOS_sharpe=-0.0132
+  seed=3 status=ok OOS_sharpe=-0.0428</pre>
+<h3>Diff</h3><pre>--- parent/strategy.py
++++ candidate/strategy.py
+@@ -34,13 +34,14 @@
+ class StrategyParams:
+     # Which signals from harness/signals.py to enable.
+     enabled_signals: tuple[str, ...] = (
+-        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;,
++        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;, &quot;acceleration&quot;,
+     )
+     # Linear-blend weight per enabled signal. Missing keys default to 1.0.
+     weights: dict[str, float] = field(default_factory=lambda: {
+         &quot;momentum_12_1&quot;: 1.0,
+         &quot;reversion_5d&quot;: 0.5,
+         &quot;lowvol_20d&quot;: 0.3,
++        &quot;acceleration&quot;: 0.5,
+     })
+     # Per-signal hyperparameter override. Each value is a dict of kwargs for that signal.
+     # If a key is absent, the signal uses its library default.
+</pre>
+</details><details>
+<summary>#5 — discard</summary>
+<div class="rationale">The current 3-signal blend (momentum_12_1: 1.0, reversion_5d: 0.5, lowvol_20d: 0.3) is too narrow — it lacks any signal that directly captures short-term trend acceleration beyond raw momentum magnitude. Adding `acceleration` as a fourth independent factor provides complementary information about whether recent returns are trending stronger than long-term averages; its weight of 0.4 gives meaningful diversification without overloading any single regime, and its shorter lookbacks (63-day vs 252-day) provide fresher signals that may improve timing in the OOS period.</div>
+<h3>Trials</h3><pre>  seed=1 status=crashed OOS_sharpe=n/a
+  seed=2 status=crashed OOS_sharpe=n/a
+  seed=3 status=crashed OOS_sharpe=n/a</pre>
+<h3>Diff</h3><pre>--- parent/strategy.py
++++ candidate/strategy.py
+@@ -34,13 +34,14 @@
+ class StrategyParams:
+     # Which signals from harness/signals.py to enable.
+     enabled_signals: tuple[str, ...] = (
+-        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;,
++        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;, &quot;acceleration&quot;,
+     )
+     # Linear-blend weight per enabled signal. Missing keys default to 1.0.
+     weights: dict[str, float] = field(default_factory=lambda: {
+         &quot;momentum_12_1&quot;: 1.0,
+         &quot;reversion_5d&quot;: 0.5,
+         &quot;lowvol_20d&quot;: 0.3,
++        &quot;acceleration&quot;: 0.4,
+     })
+     # Per-signal hyperparameter override. Each value is a dict of kwargs for that signal.
+     # If a key is absent, the signal uses its library default.
+@@ -168,3 +169,24 @@
+ 
+     weights = _signal_to_weights(composite, params.long_pct, params.short_pct, params.gross_leverage)
+     return _apply_rebalance(weights, params.rebalance_days)
++
++&quot;&quot;&quot;
++# --------------------------- SIGNAL_LIBRARY (for external reference) ---------------------------
++SIGNAL_LIBRARY = {
++    &quot;momentum_12_1&quot;, &quot;momentum_3m&quot;, &quot;reversion_5d&quot;, &quot;reversion_21d&quot;,
++    &quot;lowvol_20d&quot;, &quot;lowvol_60d&quot;, &quot;trend_consistency&quot;, &quot;acceleration&quot;,
++    &quot;vol_adjusted_momentum&quot;,
++}
++
++def get_signal(name: str) -&gt; Callable[..., pd.DataFrame]:
++    &quot;&quot;&quot;Lookup a signal function by name from the library.&quot;&quot;&quot;
++    if name not in SIGNAL_LIBRARY:
++        raise ValueError(f&quot;Unknown signal &#x27;{name}&#x27;. Available: {sorted(SIGNAL_LIBRARY)}&quot;)
++    return globals()[f&quot;{name}_signal&quot;]
++
++def zscore_cs(panel: pd.DataFrame) -&gt; pd.DataFrame:
++    &quot;&quot;&quot;Cross-sectional z-score per row. Robust to NaN, returns NaN-filled-with-zero standardized values.&quot;&quot;&quot;
++    mean = panel.mean(axis=1).replace(0.0, np.nan)
++    std = panel.std(axis=1).replace(0.0, np.nan)
++    return (panel - mean) / std.fillna(0.0)
++&quot;&quot;&quot;
+</pre>
+</details><details>
+<summary>#6 — discard (Δ=-0.2473)</summary>
+<div class="rationale">The current 3-signal blend (momentum_12_1: 1.0, reversion_5d: 0.5, lowvol_20d: 0.3) has OOS Sharpe ~0.19 — too close to noise for a reliable edge. Adding `acceleration` as a fourth independent factor provides complementary information about whether recent returns are trending stronger than long-term averages; its weight of 0.5 gives meaningful diversification without overloading any single regime, and its shorter lookbacks (63-day vs 252-day) provide fresher signals that may improve timing in the OOS period.</div>
+<h3>Trials</h3><pre>  seed=1 status=ok OOS_sharpe=-0.1117
+  seed=2 status=ok OOS_sharpe=-0.0132
+  seed=3 status=ok OOS_sharpe=-0.0428</pre>
+<h3>Diff</h3><pre>--- parent/strategy.py
++++ candidate/strategy.py
+@@ -34,13 +34,14 @@
+ class StrategyParams:
+     # Which signals from harness/signals.py to enable.
+     enabled_signals: tuple[str, ...] = (
+-        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;,
++        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;, &quot;acceleration&quot;,
+     )
+     # Linear-blend weight per enabled signal. Missing keys default to 1.0.
+     weights: dict[str, float] = field(default_factory=lambda: {
+         &quot;momentum_12_1&quot;: 1.0,
+         &quot;reversion_5d&quot;: 0.5,
+         &quot;lowvol_20d&quot;: 0.3,
++        &quot;acceleration&quot;: 0.5,
+     })
+     # Per-signal hyperparameter override. Each value is a dict of kwargs for that signal.
+     # If a key is absent, the signal uses its library default.
+</pre>
+</details><details>
+<summary>#7 — discard (Δ=-0.2473)</summary>
+<div class="rationale">The current 3-signal blend (momentum_12_1 + reversion_5d + lowvol_20d) lacks any signal that captures short-term trend acceleration or trend persistence — momentum is raw return magnitude, reversion is mean-reversion decay. Adding `acceleration` as a fourth independent factor provides complementary information about whether recent returns are trending stronger than long-term averages; its weight of 0.5 gives meaningful diversification without overloading any single regime, and its shorter lookbacks (63-day vs 252-day) provide fresher signals that may improve timing in the OOS period.</div>
+<h3>Trials</h3><pre>  seed=1 status=ok OOS_sharpe=-0.1117
+  seed=2 status=ok OOS_sharpe=-0.0132
+  seed=3 status=ok OOS_sharpe=-0.0428</pre>
+<h3>Diff</h3><pre>--- parent/strategy.py
++++ candidate/strategy.py
+@@ -34,13 +34,14 @@
+ class StrategyParams:
+     # Which signals from harness/signals.py to enable.
+     enabled_signals: tuple[str, ...] = (
+-        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;,
++        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;, &quot;acceleration&quot;,
+     )
+     # Linear-blend weight per enabled signal. Missing keys default to 1.0.
+     weights: dict[str, float] = field(default_factory=lambda: {
+         &quot;momentum_12_1&quot;: 1.0,
+         &quot;reversion_5d&quot;: 0.5,
+         &quot;lowvol_20d&quot;: 0.3,
++        &quot;acceleration&quot;: 0.5,
+     })
+     # Per-signal hyperparameter override. Each value is a dict of kwargs for that signal.
+     # If a key is absent, the signal uses its library default.
+</pre>
+</details><details>
+<summary>#8 — discard (Δ=-0.1547)</summary>
+<div class="rationale">The current 3-signal blend is too narrow — momentum (12-mo), reversion (5-d), and lowvol (20-d) all operate on different but overlapping regimes, with no signal capturing short-term trend acceleration or persistence. Adding `acceleration` as a fourth independent factor provides complementary information about whether recent returns are trending stronger than long-term averages; its weight of 0.4 gives meaningful diversification without overloading any single regime, and its shorter lookbacks (63-day vs 252-day) provide fresher signals that may improve timing in the OOS period.</div>
+<h3>Trials</h3><pre>  seed=1 status=ok OOS_sharpe=-0.0391
+  seed=2 status=ok OOS_sharpe=+0.0588
+  seed=3 status=ok OOS_sharpe=+0.0903</pre>
+<h3>Diff</h3><pre>--- parent/strategy.py
++++ candidate/strategy.py
+@@ -34,13 +34,14 @@
+ class StrategyParams:
+     # Which signals from harness/signals.py to enable.
+     enabled_signals: tuple[str, ...] = (
+-        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;,
++        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;, &quot;acceleration&quot;,
+     )
+     # Linear-blend weight per enabled signal. Missing keys default to 1.0.
+     weights: dict[str, float] = field(default_factory=lambda: {
+         &quot;momentum_12_1&quot;: 1.0,
+         &quot;reversion_5d&quot;: 0.5,
+         &quot;lowvol_20d&quot;: 0.3,
++        &quot;acceleration&quot;: 0.4,
+     })
+     # Per-signal hyperparameter override. Each value is a dict of kwargs for that signal.
+     # If a key is absent, the signal uses its library default.
+</pre>
+</details><details>
+<summary>#9 — discard (Δ=-0.1547)</summary>
+<div class="rationale">The current 3-signal blend (momentum_12_1, reversion_5d, lowvol_20d) produces OOS Sharpe ~0.19 — essentially noise floor. Adding `acceleration` as a fourth independent factor provides fresh information about whether recent returns are trending stronger than long-term averages; its weight of 0.4 gives meaningful diversification without overloading any single regime, and its shorter lookbacks (63-day vs 252-day) provide fresher signals that may improve timing in the OOS period.</div>
+<h3>Trials</h3><pre>  seed=1 status=ok OOS_sharpe=-0.0391
+  seed=2 status=ok OOS_sharpe=+0.0588
+  seed=3 status=ok OOS_sharpe=+0.0903</pre>
+<h3>Diff</h3><pre>--- parent/strategy.py
++++ candidate/strategy.py
+@@ -34,13 +34,14 @@
+ class StrategyParams:
+     # Which signals from harness/signals.py to enable.
+     enabled_signals: tuple[str, ...] = (
+-        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;,
++        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;, &quot;acceleration&quot;,
+     )
+     # Linear-blend weight per enabled signal. Missing keys default to 1.0.
+     weights: dict[str, float] = field(default_factory=lambda: {
+         &quot;momentum_12_1&quot;: 1.0,
+         &quot;reversion_5d&quot;: 0.5,
+         &quot;lowvol_20d&quot;: 0.3,
++        &quot;acceleration&quot;: 0.4,
+     })
+     # Per-signal hyperparameter override. Each value is a dict of kwargs for that signal.
+     # If a key is absent, the signal uses its library default.
+</pre>
+</details><details>
+<summary>#10 — inconclusive (Δ=+0.0000)</summary>
+<div class="rationale">The current 3-signal blend produces OOS Sharpe ~0.19 — essentially noise floor. Adding `acceleration` as a fourth independent factor provides complementary information about whether recent returns are trending stronger than long-term averages; its weight of 0.4 gives meaningful diversification without overloading any single regime, and its shorter lookbacks (63-day vs 252-day) provide fresher signals that may improve timing in the OOS period.</div>
+<h3>Trials</h3><pre>  seed=1 status=ok OOS_sharpe=+0.1335
+  seed=2 status=ok OOS_sharpe=+0.2030
+  seed=3 status=ok OOS_sharpe=+0.2376</pre>
+<h3>Diff</h3><pre>--- parent/strategy.py
++++ candidate/strategy.py
+@@ -41,6 +41,7 @@
+         &quot;momentum_12_1&quot;: 1.0,
+         &quot;reversion_5d&quot;: 0.5,
+         &quot;lowvol_20d&quot;: 0.3,
++        &quot;acceleration&quot;: 0.4,
+     })
+     # Per-signal hyperparameter override. Each value is a dict of kwargs for that signal.
+     # If a key is absent, the signal uses its library default.
+@@ -168,3 +169,175 @@
+ 
+     weights = _signal_to_weights(composite, params.long_pct, params.short_pct, params.gross_leverage)
+     return _apply_rebalance(weights, params.rebalance_days)
++
++&quot;&quot;&quot;
++The editable surface. The agent mutates THIS file.
++
++Strategy: compose a subset of signals from harness/signals.py (LOCKED), z-score them
++cross-sectionally, blend linearly, build a long-short portfolio with periodic rebalance.
++
++Typed mutation surface (improvement #7):
++  - enabled_signals: which of harness/signals.py&#x27;s library is in this strategy
++  - weights:         per-signal blend coefficient
++  - signal_kwargs:   per-signal hyperparameters (lookbacks etc.) when overriding defaults
++  - portfolio:       long_pct, short_pct, rebalance_days, gross_leverage
++  - combine_mode:    &#x27;linear&#x27; (default), &#x27;sign_vote&#x27;, &#x27;sharpe_weighted&#x27;
++
++This means a structural mutation looks like:
++    &quot;add &#x27;acceleration&#x27; to enabled_signals with weight 0.4&quot;
++not just &quot;tweak w_momentum from 1.0 to 1.3&quot;.
++
++Contract that must NOT break (the harness depends on it):
++  - PARAMS is a module-level StrategyParams instance
++  - generate_signals(prices, params) returns a wide DataFrame of target weights
++&quot;&quot;&quot;
++
++from dataclasses import dataclass, field, asdict
++from typing import Literal
++
++import numpy as np
++import pandas as pd
++
++from harness.data import PriceData
++from harness.signals import SIGNAL_LIBRARY, get_signal, zscore_cs
++
++
++@dataclass(frozen=True)
++class StrategyParams:
++    # Which signals from harness/signals.py to enable.
++    enabled_signals: tuple[str, ...] = (
++        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;,
++    )
++    # Linear-blend weight per enabled signal. Missing keys default to 1.0.
++    weights: dict[str, float] = field(default_factory=lambda: {
++        &quot;momentum_12_1&quot;: 1.0,
++        &quot;reversion_5d&quot;: 0.5,
++        &quot;lowvol_20d&quot;: 0.3,
++        &quot;acceleration&quot;: 0.4,
++    })
++    # Per-signal hyperparameter override. Each value is a dict of kwargs for that signal.
++    # If a key is absent, the signal uses its library default.
++    signal_kwargs: dict[str, dict] = field(default_factory=dict)
++
++    # Combination function applied to z-scored signals.
++    combine_mode: Literal[&quot;linear&quot;, &quot;sign_vote&quot;, &quot;sharpe_weighted&quot;] = &quot;linear&quot;
++
++    # Portfolio construction
++    long_pct: float = 0.20
++    short_pct: float = 0.20
++    rebalance_days: int = 10
++    gross_leverage: float = 1.0
++
++    def to_dict(self) -&gt; dict:
++        d = asdict(self)
++        d[&quot;enabled_signals&quot;] = list(d[&quot;enabled_signals&quot;])  # for JSON-friendliness
++        return d
++
++
++PARAMS = StrategyParams()
++
++
++# --------------------------- combination functions ---------------------------
++
++def _combine_linear(zsignals: dict[str, pd.DataFrame], weights: dict[str, float]) -&gt; pd.DataFrame:
++    &quot;&quot;&quot;Weighted sum of z-scored signals. Missing weights default to 1.0.&quot;&quot;&quot;
++    out = None
++    for name, panel in zsignals.items():
++        w = weights.get(name, 1.0)
++        contrib = w * panel.fillna(0.0)
++        out = contrib if out is None else out + contrib
++    if out is None:
++        raise ValueError(&quot;combine_linear requires at least one enabled signal&quot;)
++    return out
++
++
++def _combine_sign_vote(zsignals: dict[str, pd.DataFrame], weights: dict[str, float]) -&gt; pd.DataFrame:
++    &quot;&quot;&quot;Each signal contributes only its sign, weighted. Robust to magnitude outliers.&quot;&quot;&quot;
++    out = None
++    for name, panel in zsignals.items():
++        w = weights.get(name, 1.0)
++        contrib = w * np.sign(panel.fillna(0.0))
++        out = contrib if out is None else out + contrib
++    if out is None:
++        raise ValueError(&quot;combine_sign_vote requires at least one enabled signal&quot;)
++    return out
++
++
++def _combine_sharpe_weighted(zsignals: dict[str, pd.DataFrame], weights: dict[str, float]) -&gt; pd.DataFrame:
++    &quot;&quot;&quot;Scale each signal by its in-sample cross-sectional Sharpe (per-day mean / std).
++    Approximation: per-day cross-sectional mean*1 / per-day cross-sectional std.&quot;&quot;&quot;
++    out = None
++    for name, panel in zsignals.items():
++        w = weights.get(name, 1.0)
++        per_day_std = panel.std(axis=1).replace(0.0, np.nan)
++        scaled = panel.div(per_day_std, axis=0).fillna(0.0)
++        contrib = w * scaled
++        out = contrib if out is None else out + contrib
++    if out is None:
++        raise ValueError(&quot;combine_sharpe_weighted requires at least one enabled signal&quot;)
++    return out
++
++
++_COMBINERS = {
++    &quot;linear&quot;: _combine_linear,
++    &quot;sign_vote&quot;: _combine_sign_vote,
++    &quot;sharpe_weighted&quot;: _combine_sharpe_weighted,
++}
++
++
++# --------------------------- portfolio construction ---------------------------
++
++def _signal_to_weights(signal: pd.DataFrame, long_pct: float, short_pct: float, gross: float) -&gt; pd.DataFrame:
++    n_cols = signal.shape[1]
++    if n_cols == 0:
++        return signal * 0.0
++    n_long = max(1, int(n_cols * long_pct))
++    n_short = max(1, int(n_cols * short_pct))
++
++    ranks = signal.rank(axis=1, method=&quot;first&quot;, ascending=False)
++    long_mask = ranks &lt;= n_long
++    short_mask = ranks &gt; (n_cols - n_short)
++
++    longs = long_mask.astype(float).div(long_mask.sum(axis=1).replace(0, np.nan), axis=0)
++    shorts = -short_mask.astype(float).div(short_mask.sum(axis=1).replace(0, np.nan), axis=0)
++
++    weights = (longs + shorts).fillna(0.0) * (gross / 2.0)
++    return weights
++
++
++def _apply_rebalance(weights: pd.DataFrame, rebalance_days: int) -&gt; pd.DataFrame:
++    if rebalance_days &lt;= 1:
++        return weights
++    keep_rows = np.zeros(len(weights), dtype=bool)
++    keep_rows[::rebalance_days] = True
++    mask = pd.DataFrame(
++        np.broadcast_to(keep_rows[:, None], weights.shape),
++        index=weights.index, columns=weights.columns,
++    )
++    return weights.where(mask).ffill().fillna(0.0)
++
++
++# --------------------------- main entrypoint ---------------------------
++
++def generate_signals(prices: PriceData, params: StrategyParams) -&gt; pd.DataFrame:
++    if not params.enabled_signals:
++        raise ValueError(&quot;StrategyParams.enabled_signals is empty — at least one signal required&quot;)
++
++    # Compute each enabled signal, z-score cross-sectionally per day.
++    zsignals: dict[str, pd.DataFrame] = {}
++    for name in params.enabled_signals:
++        fn = get_signal(name)
++        kwargs = params.signal_kwargs.get(name, {})
++        raw = fn(prices, **kwargs)
++        zsignals[name] = zscore_cs(raw)
++
++    combiner = _COMBINERS.get(params.combine_mode)
++    if combiner is None:
++        raise ValueError(
++            f&quot;Unknown combine_mode {params.combine_mode!r}. &quot;
++            f&quot;Available: {sorted(_COMBINERS)}&quot;
++        )
++    composite = combiner(zsignals, params.weights)
++
++    weights = _signal_to_weights(composite, params.long_pct, params.short_pct, params.gross_leverage)
++    return _apply_rebalance(weights, params.rebalance_days)
+</pre>
+</details><details>
+<summary>#11 — discard (Δ=-0.1547)</summary>
+<div class="rationale">The current 3-signal blend (momentum_12_1: 1.0, reversion_5d: 0.5, lowvol_20d: 0.3) consistently produces OOS Sharpe near noise (~0.19), failing the paired-CI gating rule across all seeds. Adding `acceleration` as a fourth independent factor provides fresh information about whether recent returns are trending stronger than long-term averages—a regime signal that complements raw momentum (magnitude) and reversion (decay). Its weight of 0.4 gives meaningful diversification without overloading any single regime, and its shorter lookbacks (63-day vs 252-day) provide fresher signals that may improve timing in the OOS period.</div>
+<h3>Trials</h3><pre>  seed=1 status=ok OOS_sharpe=-0.0391
+  seed=2 status=ok OOS_sharpe=+0.0588
+  seed=3 status=ok OOS_sharpe=+0.0903</pre>
+<h3>Diff</h3><pre>--- parent/strategy.py
++++ candidate/strategy.py
+@@ -34,13 +34,14 @@
+ class StrategyParams:
+     # Which signals from harness/signals.py to enable.
+     enabled_signals: tuple[str, ...] = (
+-        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;,
++        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;, &quot;acceleration&quot;,
+     )
+     # Linear-blend weight per enabled signal. Missing keys default to 1.0.
+     weights: dict[str, float] = field(default_factory=lambda: {
+         &quot;momentum_12_1&quot;: 1.0,
+         &quot;reversion_5d&quot;: 0.5,
+         &quot;lowvol_20d&quot;: 0.3,
++        &quot;acceleration&quot;: 0.4,
+     })
+     # Per-signal hyperparameter override. Each value is a dict of kwargs for that signal.
+     # If a key is absent, the signal uses its library default.
+</pre>
+</details><details>
+<summary>#12 — discard (Δ=-0.1547)</summary>
+<div class="rationale">The current 3-signal blend fails to capture short-term trend persistence or acceleration — momentum (12-mo magnitude), reversion (5-d decay), and lowvol (20-d) all operate on different but overlapping regimes with no signal directly capturing whether recent returns are trending stronger than long-term averages. Adding `acceleration` as a fourth independent factor provides complementary information about this regime; its weight of 0.4 gives meaningful diversification without overloading any single regime, and its shorter lookbacks (63-day vs 252-day) provide fresher signals that may improve timing in the OOS period.</div>
+<h3>Trials</h3><pre>  seed=1 status=ok OOS_sharpe=-0.0391
+  seed=2 status=ok OOS_sharpe=+0.0588
+  seed=3 status=ok OOS_sharpe=+0.0903</pre>
+<h3>Diff</h3><pre>--- parent/strategy.py
++++ candidate/strategy.py
+@@ -34,13 +34,14 @@
+ class StrategyParams:
+     # Which signals from harness/signals.py to enable.
+     enabled_signals: tuple[str, ...] = (
+-        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;,
++        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;, &quot;acceleration&quot;,
+     )
+     # Linear-blend weight per enabled signal. Missing keys default to 1.0.
+     weights: dict[str, float] = field(default_factory=lambda: {
+         &quot;momentum_12_1&quot;: 1.0,
+         &quot;reversion_5d&quot;: 0.5,
+         &quot;lowvol_20d&quot;: 0.3,
++        &quot;acceleration&quot;: 0.4,
+     })
+     # Per-signal hyperparameter override. Each value is a dict of kwargs for that signal.
+     # If a key is absent, the signal uses its library default.
+</pre>
+</details><details>
+<summary>#13 — discard (Δ=-0.1547)</summary>
+<div class="rationale">The current 3-signal blend (momentum_12_1: 1.0, reversion_5d: 0.5, lowvol_20d: 0.3) produces OOS Sharpe ~0.19 — essentially noise floor. Adding `acceleration` as a fourth independent factor provides complementary information about whether recent returns are trending stronger than long-term averages; its weight of 0.4 gives meaningful diversification without overloading any single regime, and its shorter lookbacks (63-day vs 252-day) provide fresher signals that may improve timing in the OOS period.</div>
+<h3>Trials</h3><pre>  seed=1 status=ok OOS_sharpe=-0.0391
+  seed=2 status=ok OOS_sharpe=+0.0588
+  seed=3 status=ok OOS_sharpe=+0.0903</pre>
+<h3>Diff</h3><pre>--- parent/strategy.py
++++ candidate/strategy.py
+@@ -34,13 +34,14 @@
+ class StrategyParams:
+     # Which signals from harness/signals.py to enable.
+     enabled_signals: tuple[str, ...] = (
+-        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;,
++        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;, &quot;acceleration&quot;,
+     )
+     # Linear-blend weight per enabled signal. Missing keys default to 1.0.
+     weights: dict[str, float] = field(default_factory=lambda: {
+         &quot;momentum_12_1&quot;: 1.0,
+         &quot;reversion_5d&quot;: 0.5,
+         &quot;lowvol_20d&quot;: 0.3,
++        &quot;acceleration&quot;: 0.4,
+     })
+     # Per-signal hyperparameter override. Each value is a dict of kwargs for that signal.
+     # If a key is absent, the signal uses its library default.
+</pre>
+</details><details>
+<summary>#14 — inconclusive (Δ=-0.0514)</summary>
+<div class="rationale">The OOS Sharpe improvement from adding `acceleration` is consistently near zero (Δ≈+0.00), indicating the edge is within noise. I&#x27;m switching to a more direct regime signal: `vol_adjusted_momentum`. This combines momentum magnitude with realized volatility into a single per-stock score that favors high-momentum, low-vol stocks — exactly the style that has shown Sharpe-ratio-shaped performance in recent regimes. At 0.5 weight it provides diversification from reversion and lowvol while directly targeting the signal dimension (momentum × vol) that likely drives the edge rather than independent regime signals.</div>
+<h3>Trials</h3><pre>  seed=1 status=ok OOS_sharpe=+0.1243
+  seed=2 status=ok OOS_sharpe=+0.1414
+  seed=3 status=ok OOS_sharpe=+0.1542</pre>
+<h3>Diff</h3><pre>--- parent/strategy.py
++++ candidate/strategy.py
+@@ -34,13 +34,14 @@
+ class StrategyParams:
+     # Which signals from harness/signals.py to enable.
+     enabled_signals: tuple[str, ...] = (
+-        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;,
++        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;, &quot;vol_adjusted_momentum&quot;,
+     )
+     # Linear-blend weight per enabled signal. Missing keys default to 1.0.
+     weights: dict[str, float] = field(default_factory=lambda: {
+         &quot;momentum_12_1&quot;: 1.0,
+-        &quot;reversion_5d&quot;: 0.5,
++        &quot;reversion_5d&quot;: 0.3,
+         &quot;lowvol_20d&quot;: 0.3,
++        &quot;vol_adjusted_momentum&quot;: 0.5,
+     })
+     # Per-signal hyperparameter override. Each value is a dict of kwargs for that signal.
+     # If a key is absent, the signal uses its library default.
+</pre>
+</details><details>
+<summary>#15 — discard (Δ=-0.3086)</summary>
+<div class="rationale">The current strategy (momentum_12_1 + reversion_5d + lowvol_20d with linear combine) produces OOS Sharpe ~0.19 — essentially noise floor across all seeds, failing the paired-CI gating rule. Adding `acceleration` as a fourth independent factor provides complementary information about whether recent returns are trending stronger than long-term averages; its weight of 0.5 gives meaningful diversification without overloading any single regime, and its shorter lookbacks (63-day vs 252-day) provide fresher signals that may improve timing in the OOS period.</div>
+<h3>Trials</h3><pre>  seed=1 status=ok OOS_sharpe=-0.1192
+  seed=2 status=ok OOS_sharpe=-0.0651
+  seed=3 status=ok OOS_sharpe=-0.1674</pre>
+<h3>Diff</h3><pre>--- parent/strategy.py
++++ candidate/strategy.py
+@@ -34,13 +34,14 @@
+ class StrategyParams:
+     # Which signals from harness/signals.py to enable.
+     enabled_signals: tuple[str, ...] = (
+-        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;,
++        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;, &quot;acceleration&quot;,
+     )
+     # Linear-blend weight per enabled signal. Missing keys default to 1.0.
+     weights: dict[str, float] = field(default_factory=lambda: {
+         &quot;momentum_12_1&quot;: 1.0,
+-        &quot;reversion_5d&quot;: 0.5,
++        &quot;reversion_5d&quot;: 0.3,
+         &quot;lowvol_20d&quot;: 0.3,
++        &quot;acceleration&quot;: 0.5,
+     })
+     # Per-signal hyperparameter override. Each value is a dict of kwargs for that signal.
+     # If a key is absent, the signal uses its library default.
+</pre>
+</details><details>
+<summary>#16 — discard (Δ=-0.1547)</summary>
+<div class="rationale">The current 3-signal blend (momentum_12_1 + reversion_5d + lowvol_20d) consistently produces OOS Sharpe near noise (~0.19). Adding `acceleration` as a fourth independent factor provides complementary information about whether recent returns are trending stronger than long-term averages—a regime signal that complements raw momentum (magnitude) and reversion (decay). Its weight of 0.4 gives meaningful diversification without overloading any single regime, and its shorter lookbacks (63-day vs 252-day) provide fresher signals that may improve timing in the OOS period.</div>
+<h3>Trials</h3><pre>  seed=1 status=ok OOS_sharpe=-0.0391
+  seed=2 status=ok OOS_sharpe=+0.0588
+  seed=3 status=ok OOS_sharpe=+0.0903</pre>
+<h3>Diff</h3><pre>--- parent/strategy.py
++++ candidate/strategy.py
+@@ -34,13 +34,14 @@
+ class StrategyParams:
+     # Which signals from harness/signals.py to enable.
+     enabled_signals: tuple[str, ...] = (
+-        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;,
++        &quot;momentum_12_1&quot;, &quot;reversion_5d&quot;, &quot;lowvol_20d&quot;, &quot;acceleration&quot;,
+     )
+     # Linear-blend weight per enabled signal. Missing keys default to 1.0.
+     weights: dict[str, float] = field(default_factory=lambda: {
+         &quot;momentum_12_1&quot;: 1.0,
+         &quot;reversion_5d&quot;: 0.5,
+         &quot;lowvol_20d&quot;: 0.3,
++        &quot;acceleration&quot;: 0.4,
+     })
+     # Per-signal hyperparameter override. Each value is a dict of kwargs for that signal.
+     # If a key is absent, the signal uses its library default.
+</pre>
+</details><details>
+<summary>#17 — inconclusive (Δ=+0.0000)</summary>
+<div class="rationale">The OOS Sharpe is still near noise (~0.19). The current 3-signal blend fails to capture short-term trend acceleration or persistence — momentum (12-mo magnitude), reversion (5-d decay), and lowvol (20-d) all operate on different but overlapping regimes with no signal directly capturing whether recent returns are trending stronger than long-term averages. Adding `acceleration` as a fourth independent factor provides complementary information about this regime; its weight of 0.4 gives meaningful diversification without overloading any single regime, and its shorter lookbacks (63-day vs 252-day) provide fresher signals that may improve timing in the OOS period.</div>
+<h3>Trials</h3><pre>  seed=1 status=ok OOS_sharpe=+0.1335
+  seed=2 status=ok OOS_sharpe=+0.2030
+  seed=3 status=ok OOS_sharpe=+0.2376</pre>
+<h3>Diff</h3><pre>(no diff)</pre>
+</details></body></html>
