@@ -27,11 +27,49 @@ behind each piece.
                                            │
                                            ▼
    ┌──────────────────────────────────────────────────────────────┐
-   │  Locked harness (harness/)                                    │
-   │   data ↔ signals ↔ backtest ↔ metrics                        │
+   │  Locked harness — selected by the active Domain:             │
+   │     harness/             (finance:     data↔signals↔backtest) │
+   │     toy_harness/         (toy_sklearn: data↔CV evaluator)     │
+   │     shakespeare_harness/ (shakespeare: data↔tokenizer↔trainer)│
    │   NEVER MODIFIED — defines the question; lock = comparability │
    └──────────────────────────────────────────────────────────────┘
 ```
+
+## The Domain protocol (multi-domain dispatch)
+
+One loop drives three specialists. `researcher/domain.py` defines a frozen
+`Domain` dataclass; `--domain {finance,toy_sklearn,shakespeare}` selects one and
+everything downstream is parameterized by it.
+
+| Field | Role |
+|---|---|
+| `strategy_file` | the editable file the proposer mutates |
+| `parent_backup_file` | where the runner stashes the parent for revert |
+| `harness_files` | the LOCKED files rendered into the proposer's system prompt |
+| `worker_command` | base argv for the subprocess that runs one eval |
+| `primary_metric_name` / `_format` | display label + format spec for logs |
+| `system_prompt` | the domain-specific system-prompt template |
+| `required_symbols` | substrings a candidate MUST contain (parser guard) |
+
+The three instances:
+
+| Domain | Editable surface | Eval | Primary metric |
+|---|---|---|---|
+| `finance` | `strategy.py` (signal blend) | walk-forward backtest | OOS Sharpe (higher-better) |
+| `toy_sklearn` | `toy_strategy.py` (estimator) | stratified K-fold CV | CV accuracy (higher-better) |
+| `shakespeare` | `shakespeare_strategy.py` (GPT + optimizer) | tiny-GPT training | −val_bpb (negated so higher-better) |
+
+Two consequences worth calling out:
+
+- **Higher-better gate, uniformly.** The decision gate only knows "bigger primary
+  metric = better." shakespeare's val_bpb is lower-better, so its trainer returns
+  `primary_metric = -val_bpb` and the gate needs no per-domain special-casing.
+- **Each proposer renders the *active* domain's harness into its prompt.**
+  `AnthropicProposer` and `LocalProposer` fill the `{harness_files}` slot of the
+  system prompt from `domain.harness_files` — a shakespeare run shows the model the
+  shakespeare trainer, not the finance backtester. (This was a real bug once: the
+  proposers injected the finance harness regardless of `--domain`. Fixed 2026-05-29;
+  see `STATUS.md`.)
 
 ## Layer 0 — Substrate
 

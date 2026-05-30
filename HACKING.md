@@ -21,7 +21,7 @@ class MyProposer:
         # ctx.current_strategy_src        — the current parent's strategy.py
         # ctx.recent_decided              — last 15 decisions in this session
         # ctx.iteration                   — 1-indexed
-        # ctx.parent_metric               — parent's mean OOS Sharpe
+        # ctx.parent_metric               — parent's mean primary metric (domain-specific)
         # ctx.session_id                  — for cross-session-memory exclusion
         # ctx.parent_candidate_id         — for attribution lookup
 
@@ -67,15 +67,20 @@ PARAMS and generate_signals(prices, params).]
 ```
 
 `AnthropicProposer` parses both tags. `LocalProposer` tolerates Markdown fence
-wrapping and a missing close tag (small models often truncate).
+wrapping and a missing close tag (small models often truncate), and additionally
+checks `domain.required_symbols`. The example above is the finance contract; the
+required exports differ per domain (finance needs `generate_signals`; toy and
+shakespeare need `build_model` / `build_optimizer`).
 
 ## Add a new domain
 
-The framework supports two domains today (`finance` and `toy_sklearn`). The
+The framework ships three domains (`finance`, `toy_sklearn`, `shakespeare`). The
 `Domain` dataclass in `researcher/domain.py` is the canonical example — read
-both `FINANCE` and `TOY_SKLEARN` to see the pattern in two concrete instances.
+`FINANCE`, `TOY_SKLEARN`, and `SHAKESPEARE` to see the pattern across three
+concrete instances. (`SHAKESPEARE` is the most instructive: its "harness" is a
+neural-net trainer and its metric is lower-better, negated to fit the gate.)
 
-To add a third domain:
+To add another domain:
 
 1. **Create a `LOCKED` harness package** that mirrors `harness/` or `toy_harness/`:
    - `your_domain/data.py` — load whatever data the domain needs
@@ -93,8 +98,16 @@ To add a third domain:
    - Patterns: `researcher/_backtest_worker.py` (finance) or `researcher/_sklearn_worker.py` (toy).
 
 4. **Register the Domain** in `researcher/domain.py`:
-   - Define `YOUR_SYSTEM_PROMPT` with `{n_seeds}` and `{harness_files}` placeholders
-   - Define `YOUR_DOMAIN = Domain(name="your_name", strategy_file=..., harness_files=(...), worker_command=(...), primary_metric_name=..., primary_metric_format=..., system_prompt=YOUR_SYSTEM_PROMPT)`
+   - Define `YOUR_SYSTEM_PROMPT` with `{n_seeds}` and `{harness_files}` placeholders.
+     The `{harness_files}` slot is filled at runtime from the `harness_files` tuple below —
+     list exactly the LOCKED files you want the proposer to read.
+   - Define `YOUR_DOMAIN = Domain(name="your_name", strategy_file=..., parent_backup_file=...,
+     harness_files=(...), worker_command=(...), primary_metric_name=..., primary_metric_format=...,
+     system_prompt=YOUR_SYSTEM_PROMPT, required_symbols=("class HyperParams", "def build_model"))`
+   - `required_symbols` are substrings every candidate must contain; the local-proposer
+     parser rejects output missing them — a cheap guard against malformed mutations.
+   - If your metric is **lower-better**, return `primary_metric = -metric` from the worker so
+     the higher-better gate works unchanged (this is exactly how shakespeare handles `val_bpb`).
    - Add to the `DOMAINS` dict: `"your_name": YOUR_DOMAIN`
 
 5. **Test it.** The `--domain your_name` CLI flag works automatically (it iterates `DOMAINS.keys()`).

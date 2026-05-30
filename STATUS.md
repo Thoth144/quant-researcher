@@ -45,7 +45,7 @@ real proposer is now warranted before drawing model-capability conclusions on th
 | **Toy sklearn specialist** | ~190 | 6 | ✅ Working — GradientBoostingClassifier on digits, stratified K-fold CV, paired-CI substrate (different seeds → different splits). Baseline produces 96.14% CV accuracy in session 3. |
 | **Shakespeare specialist** | ~620 | 7 | ✅ Working — tiny GPT (vanilla pytorch, ~80 LOC), char-level tokenizer over tiny-shakespeare, val_bpb metric. Default config (n_layer=4, n_embd=128, 500 iters) trains in 3-4s on RTX 4070. Baseline produces val_bpb=3.52 in session 5. Demonstrates framework on actual neural-net training (not just hyperparameter tuning). |
 
-**Totals:** ~6,700 source LOC, 92 tests, all passing.
+**Totals:** ~5,800 source LOC (~7,100 incl. tests), 95 tests, all passing.
 
 ## What's NOT validated
 
@@ -109,13 +109,13 @@ favor of more infrastructure work. That choice is the user's to make.
 
 ```
 $ find . -name '*.py' -not -path './.venv/*' -not -path '*/__pycache__/*' | wc -l
-46 Python files
+65 Python files
 
 $ pytest tests/ -q
-72 passed
+95 passed
 
 $ ls reports/
-session_1.html  session_2.html
+session_1.html  session_2.html  shakespeare_session8.html  toy_baseline.html
 
 $ sqlite3 runs.db '.schema' | grep -c 'CREATE TABLE\|CREATE VIRTUAL'
 8 tables

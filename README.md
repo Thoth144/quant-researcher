@@ -1,11 +1,18 @@
 # quant-researcher
 
-A local-first **finance Researcher specialist** with an instrumented
-self-improvement loop. An agent (local LLM or Anthropic) proposes mutations to
-a multi-signal equity strategy, the loop runs paired-CI gated backtests against
-a locked walk-forward harness, and accepted mutations become the new parent for
-the next iteration. Everything is provenance-logged so you can compare
-proposers, prompts, and selectors by measured hit-rate.
+A local-first **Researcher framework** with an instrumented self-improvement
+loop. An agent (local LLM or Anthropic) proposes mutations to an editable
+strategy file, the loop runs paired-CI-gated evaluations against a *locked*
+harness, and accepted mutations become the new parent for the next iteration.
+Everything is provenance-logged so you can compare proposers, prompts, and
+selectors by measured hit-rate.
+
+One framework, **three concrete domains** behind a single `Domain` protocol:
+`finance` (multi-signal S&P 500 equity strategy), `toy_sklearn`
+(GradientBoostingClassifier on the digits dataset), and `shakespeare` (tiny-GPT
+character-level pretraining, with an optional Hyperball + ULMO optimizer arm).
+The outer loop, decision gate, provenance store, and GEPA scaffold are all
+domain-agnostic — only the `Domain` differs.
 
 The point isn't to discover an alpha — the point is to **measure reasoning
 quality on a fixed benchmark**.
@@ -14,8 +21,8 @@ quality on a fixed benchmark**.
 
 | | |
 |---|---|
-| Source LOC | ~6,700 |
-| Tests | 92 (all passing) |
+| Source LOC | ~7,100 (≈5,800 excluding tests) |
+| Tests | 95 (all passing) |
 | Domains | **3** — `finance` (S&P 500 multi-signal blend), `toy_sklearn` (GradientBoostingClassifier on digits), `shakespeare` (tiny GPT character-level pretraining on tiny-shakespeare). Domain protocol validated across three independent specialist instances. |
 | Validated harness (finance) | S&P 500 daily 2010-2024, point-in-time membership, vectorized walk-forward backtest, paired-CI gate |
 | Validated harness (toy) | sklearn `digits` dataset, stratified K-fold CV, fast eval cycle (~2-3s/seed) |
@@ -28,6 +35,9 @@ quality on a fixed benchmark**.
 ## Quick start
 
 ```bash
+# Clone (private repo — requires access)
+gh repo clone Thoth144/quant-researcher && cd quant-researcher
+
 uv sync --extra dev
 
 # One-time (finance only): download S&P 500 universe + bars + point-in-time membership
@@ -91,13 +101,29 @@ toy_harness/            LOCKED — defines the question (toy_sklearn)
 toy_strategy.py         EDITABLE — toy editable surface
                         HyperParams dataclass + build_model factory
 
+# === Shakespeare specialist ===
+shakespeare_harness/    LOCKED — defines the question (shakespeare)
+  trainer.py            run_training loop; returns primary_metric = -val_bpb
+  model.py              TinyGPT (vanilla pytorch, ~80 LOC)
+  tokenizer.py          char-level tokenizer over tiny-shakespeare
+  data.py               corpus download + train/val split
+  metrics.py            bits-per-byte (val_bpb)
+
+shakespeare_strategy.py EDITABLE — shakespeare editable surface
+                        HyperParams + build_model + build_optimizer
+                        ('adamw' | 'hyperball'; Hyperball/ULMO from the
+                        sibling tinyshakespeare-gpt repo)
+
 # === Shared infrastructure (domain-agnostic) ===
 researcher/             The loop infrastructure
   runs.py               sqlite + FTS5 provenance (candidates, trials, sessions, prompts, attribution)
   decide.py             paired-CI gate (per-seed t-test)
   proposer.py           AnthropicProposer + StubProposer + ProposerContext
   local_proposer.py     OpenAI-compatible HTTP wrapper (LM Studio / Ollama)
-  runner.py             subprocess-isolated backtest execution + adaptive replication
+  runner.py             subprocess-isolated execution + adaptive replication
+  _backtest_worker.py   per-domain subprocess entrypoints (one eval → one JSON
+  _sklearn_worker.py    line); the runner spawns a fresh process per seed so a
+  _shakespeare_worker.py buggy candidate can't corrupt the parent loop
   loop.py               outer orchestrator
   cross_session.py      FTS5 retrieval across sessions for proposer prompts
   attribution.py        per-signal standalone Sharpe (post-accept diagnostic)
@@ -118,7 +144,7 @@ scripts/
   report.py             standalone HTML report generator
   evolve_prompt.py      GEPA-scaffold entrypoint
 
-tests/                  72 tests
+tests/                  95 tests
 ```
 
 ## Design principles
@@ -133,11 +159,12 @@ tests/                  72 tests
 - **Provenance over abstraction.** Every trial, every decision, every prompt
   variant goes into `runs.db`. Reasoning improvements are measured by
   hit-rate-against-prior-versions, not vibes.
-- **Domain abstraction extracted from two concrete instances.** `researcher/domain.py`
+- **Domain abstraction extracted from three concrete instances.** `researcher/domain.py`
   defines the `Domain` dataclass bundling strategy file, harness files, worker command,
-  metric format, and system prompt. Both finance and toy_sklearn use the same loop +
-  decision gate + GEPA scaffold; only the Domain differs. See `HACKING.md` for the
-  "add a third domain" walkthrough.
+  metric format, system prompt, and required symbols. finance, toy_sklearn, and shakespeare
+  all use the same loop + decision gate + GEPA scaffold; only the `Domain` differs. Each
+  proposer renders the *active* domain's harness files into its system prompt. See
+  `HACKING.md` for the "add another domain" walkthrough.
 
 ## Documentation
 
