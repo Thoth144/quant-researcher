@@ -174,4 +174,4 @@ tests/                  95 tests
 
 ## License
 
-MIT (or whatever the workspace defaults to; not formally licensed yet).
+[Apache License 2.0](LICENSE). © 2026 Thoth144.
