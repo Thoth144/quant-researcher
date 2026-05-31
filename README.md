@@ -35,8 +35,8 @@ quality on a fixed benchmark**.
 ## Quick start
 
 ```bash
-# Clone (private repo — requires access)
-gh repo clone Thoth144/quant-researcher && cd quant-researcher
+# Clone
+git clone https://github.com/Thoth144/quant-researcher.git && cd quant-researcher
 
 uv sync --extra dev
 
